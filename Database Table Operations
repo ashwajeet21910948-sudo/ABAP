@@ -1,0 +1,186 @@
+*database ops
+*&---------------------------------------------------------------------*
+*& Report  ZDATABASE_OPS04
+*&
+*&---------------------------------------------------------------------*
+*&
+*&
+*&---------------------------------------------------------------------*
+
+REPORT ZDATABASE_OPS04.
+
+DATA : lwa_data type zorder_04."use table structure itself(table is structure but reverse not true)
+TYPES : BEGIN OF lty_display,
+        ONO TYPE ZDONO,
+        ODATE TYPE ZDODATE,
+        PM TYPE ZDPM,
+  END OF lty_display.
+
+
+
+*SELECTION-SCREEN : BEGIN OF LINE.
+
+PARAMETERS : p_ono type zdono OBLIGATORY.
+PARAMETERS : p_odate type zdodate MODIF ID A1.
+PARAMETERS : p_pm type zdpm MODIF ID A2.
+PARAMETERS : p_r1 type c RADIOBUTTON GROUP rad1 USER-COMMAND ABC. "Us-coomm to 1st radio button only
+*SELECTION-SCREEN : COMMENT 8(20) TEXT-001.
+PARAMETERS : p_r2 type c RADIOBUTTON GROUP rad1.
+
+PARAMETERS : p_r3 type c RADIOBUTTON GROUP rad1.
+
+PARAMETERS : p_r4 type c RADIOBUTTON GROUP rad1.
+
+
+*SELECTION-SCREEN : END OF LINE.
+
+
+TYPES : BEGIN OF lty_ono,
+        ono type zdono,
+        END of lty_ono.
+
+DATA : lt_ono TYPE TABLE OF lty_ono.
+DATA : lwa_ono TYPE lty_ono.
+DATA : lwa_display type lty_display.
+
+
+
+
+START-OF-SELECTION.
+
+*INSERT OPERATION LOGIC
+IF p_r1 = 'X'. "structure of internal tab muct match with work area
+  lwa_data-ono = p_ono. "for single record insertion,else go for internal tab
+  lwa_data-odate = p_odate. "for single record insertion,else go for internal tab
+  lwa_data-pm = p_pm. "for single record insertion,else go for internal tab
+  INSERT ZORDER_04 FROM LWA_DATA.
+
+  IF sy-subrc = 0.
+
+    WRITE : 'Record inserted successfully'.
+    ELSE.
+    WRITE : 'Record not inserted'.
+  endif.
+
+  ENDIF.
+
+
+*DELETE OPERATIONS LOGIC
+ IF p_r2 = 'X'.
+   lwa_data-ono = p_ono.
+   DELETE zorder_04 FROM lwa_data.
+   IF sy-subrc = 0.
+   WRITE : 'Record deleted sucessfully' , p_ono.
+   ENDIF.
+
+ ENDIF.
+
+*UPDATE OPERATIONS LOGIC
+ IF p_r3 = 'X'.
+   lwa_data-ono = p_ono.
+   lwa_data-odate = p_odate.
+   lwa_data-pm = p_pm.
+   UPDATE zorder_04 FROM lwa_data.
+   IF sy-subrc = 0.
+    WRITE : 'Record updated sucessfully' , p_ono.
+   ENDIF.
+
+  ENDIF.
+
+*MODIFY
+ IF p_r4 = 'X'.
+   lwa_data-ono = p_ono.
+   lwa_data-odate = p_odate.
+   lwa_data-pm = p_pm.
+   MODIFY zorder_04 FROM lwa_data.
+   IF sy-subrc = 0.
+    WRITE : 'Record modified sucessfully' , p_ono.
+   ENDIF.
+  ENDIF.
+
+
+AT SELECTION-SCREEN. " TO DISPLAY ERROR MSG IN INITIAL SCREEN ITSELF.FOR VALIDATION PART
+
+ IF P_R1 = 'X'.
+  SELECT ONO
+  FROM ZORDER_04
+  INTO TABLE lt_ono
+  WHERE ONO = P_ONO.
+
+  IF sy-subrc = 0.
+    MESSAGE E005(ZMESSAGE04) WITH p_ono.
+  endif.
+ ENDIF.
+
+*DELETE
+ IF p_r2 = 'X'. "to validate input
+   SELECT SINGLE ono
+     FROM zorder_04
+     INTO lwa_ono
+     WHERE ono = p_ono.
+    IF sy-subrc  <> 0.
+     MESSAGE e006(ZMESSAGE04) WITH p_ono.
+    ENDIF.
+ ENDIF.
+
+*UPDATE OPERATIONS
+ IF p_r3 = 'X'. "to display details of selected order
+
+   SELECT SINGLE ono
+     FROM zorder_04
+     INTO lwa_ono
+     WHERE ono = p_ono.
+   IF sy-subrc  <> 0.
+     MESSAGE e006(ZMESSAGE04) WITH p_ono.
+    ELSE.
+     SELECT SINGLE ono odate pm
+     FROM zorder_04
+     INTO lwa_display
+     WHERE ono = P_ono.
+   ENDIF.
+
+ ENDIF.
+
+*MODIFY (INSERT + UPDATE both)
+ IF p_r4 = 'X'.
+   SELECT SINGLE ono odate pm
+     FROM zorder_04
+     INTO lwa_display
+     WHERE ono = P_ono.
+     IF sy-subrc <> 0.
+       CLEAR lwa_display. " TO clear if record does not exist
+     ENDIF.
+  ENDIF.
+
+
+
+
+*******************************************************************************************
+
+*DELETE
+AT SELECTION-SCREEN OUTPUT. "to make other radio button invisible
+
+IF p_r2 = 'X'.
+
+ LOOP AT SCREEN.
+    IF screen-group1 = 'A1' OR screen-group1 = 'A2'.
+      screen-active = 0. "0 is to ake inactive,1 to make active
+      MODIFY SCREEN.
+    ENDIF.
+
+ ENDLOOP.
+
+ ENDIF.
+
+*UPDATE
+
+ IF p_r3 = 'X'.  "to display details of selected order
+   p_odate = lwa_display-odate.
+   p_pm = lwa_display-pm.
+  ENDIF.
+
+*MODFIFY
+   IF p_r4 = 'X'.  "to display details of selected order
+   p_odate = lwa_display-odate.
+   p_pm = lwa_display-pm.
+  ENDIF.
