@@ -1,0 +1,210 @@
+* -------------------------------------------------------------------*
+*& Report  ZEVENTS04
+*&
+*&---------------------------------------------------------------------*
+*&
+*&
+*&---------------------------------------------------------------------*
+
+REPORT ZEVENTS04  LINE-COUNT 10(2). "10 LINES IN 1 PAGE-4 line already title,colm name,etc.(2) reserved for End-of-page.
+
+TYPES : BEGIN  OF lty_data,
+        ONO TYPE ZDONO,
+        ODATE TYPE ZDODATE,
+        PM TYPE ZDPM,
+        END OF lty_data.
+
+
+DATA : lv_ono TYPE ZDONO,
+       LV_odate TYPE ZDODATE,
+       lv_pm TYPE ZDPM,
+       lt_data TYPE TABLE OF lty_data,
+       lwa_data TYPE lty_data.
+
+* -------------------------------------------------------------------*
+*& Report  ZEVENTS04
+*&
+*&---------------------------------------------------------------------*
+*&
+*&
+*&---------------------------------------------------------------------*
+
+REPORT ZEVENTS04  LINE-COUNT 10(2). "10 LINES IN 1 PAGE-4 line already title,colm name,etc.(2) reserved for End-of-page.
+
+INCLUDE ZINC_EVENTS04_DD.
+
+SELECT-OPTIONS : s_ono FOR lv_ono DEFAULT 1 TO 15 NO-EXTENSION , "to remove multiple selection button(double arrow))
+                 s_odate for lv_odate NO-EXTENSION ,"to remove Highs in selection screen
+                 s_pm FOR lv_pm NO INTERVALS MODIF ID MPM. "pure line ko assign kr diya ek sath(YT-59)
+
+PARAMETERS : p_check TYPE C AS CHECKBOX USER-COMMAND SELECT." SELECT is function code of box(to tell sap we have selected)
+
+
+*1. Event-Initilization (to give Default Values to Select-options/Parameter)
+INITIALIZATION.
+s_odate-sign = 'I'."include
+s_odate-option = 'BT'."between (relational operator)
+s_odate-low = sy-datum - 100."SYSTEM DATE minus 100 days
+s_odate-high = sy-datum."todays date
+APPEND s_odate.
+
+*6 AT SELECTION SCREEN OPTPUT used to MODIFY selection screen
+AT SELECTION-SCREEN OUTPUT. "task? to clear check box to dispaly Payment mode.
+  IF p_check = ' '.
+     LOOP AT SCREEN.
+      IF SCREEN-group1 = 'MPM'. "group1 is written in debugger.
+       Screen-active = 0. "to make inactive
+       MODIFY SCREEN. " to reflect changes
+      ENDIF.
+     ENDLOOP.
+  ENDIF.
+
+*Same logic for in check box is ticked
+  IF p_check = 'X'.
+     LOOP AT SCREEN.
+      IF SCREEN-group1 = 'MPM'.
+       Screen-active = 1. "to make inactive
+       MODIFY SCREEN. " to reflect changes
+      ENDIF.
+     ENDLOOP.
+  ENDIF.
+
+
+
+*2.AT SELECTION-SCREEN (to validate input)
+AT SELECTION-SCREEN.
+IF s_pm IS NOT INITIAL.
+   if s_pm-low <> 'CASH' AND S_PM-low <> 'Online' AND s_pm <> 'UPI'.
+      MESSAGE e003(ZMESSAGE04).
+   ENDIF.
+  ENDIF.
+
+
+*3.Start of selection screen (only after pressing EXECUTE)
+  START-OF-SELECTION.
+  SELECT ono odate pm
+  FROM ZORDER_04
+  INTO TABLE lt_data "taking to internal table
+  WHERE ono IN s_ono "use IN ehen select option is used above
+  AND odate IN s_odate
+  AND pm IN s_pm.
+
+LOOP AT LT_DATA INTO LWA_DATA.
+  WRITE : / lwa_data-ono UNDER TEXT-002 , lwa_data-odate UNDER TEXT-003 , lwa_data-pm UNDER TEXT-004..
+  ENDLOOP.
+
+*4.END OF SELECTION (does not requir action to trigger)
+END-OF-SELECTION.
+  WRITE : / TEXT-000."end of records
+
+*5.TOP OF PAGE (does not requir action to trigger)
+TOP-OF-PAGE.
+WRITE : / TEXT-001 , sy-pagno,
+        / TEXT-002 , 15 TEXT-003 , 27 TEXT-004.
+
+END-OF-PAGE. "triggers afte end of last write ststment
+WRITE: / text-005 , sy-pagno.
+
+*7.AT SELECTION-SCREEN ON VALUE-REQUEST FOR <FIELD>
+*AT SELECTION-SCREEN ON VALUE-REQUEST FOR s_pm-low. "when f4 help button already present but u need to edit that(not in this PM)
+
+AT SELECTION-SCREEN ON VALUE-REQUEST FOR s_pm-low.
+
+INCLUDE ZINC_EVENTS_F4HELP. "internal tab of 2 columns
+
+CALL FUNCTION 'F4IF_INT_TABLE_VALUE_REQUEST' "(FM provided by SAP)
+  EXPORTING
+*   DDIC_STRUCTURE         = ' '
+    RETFIELD               = 'pm' "returnfield-jobox mein dikhega 'C'
+*   PVALKEY                = ' '
+   DYNPPROG               = sy-repid
+   DYNPNR                 = sy-dynnr
+   DYNPROFIELD            = ' s_pm-low' "dynprog? = screen (kaha assign karna hai0
+*   STEPL                  = 0
+*   WINDOW_TITLE           =
+*   VALUE                  = ' '
+   VALUE_ORG              = 'S' "take s for new development (open FM and see)
+*   MULTIPLE_CHOICE        = ' '
+*   DISPLAY                = ' '
+*   CALLBACK_PROGRAM       = ' '
+*   CALLBACK_FORM          = ' '
+*   CALLBACK_METHOD        =
+*   MARK_TAB               =
+* IMPORTING
+*   USER_RESET             =
+  TABLES
+    VALUE_TAB              = lt_pm
+*   FIELD_TAB              =
+*   RETURN_TAB             =
+*   DYNPFLD_MAPPING        =
+ EXCEPTIONS
+   PARAMETER_ERROR        = 1
+   NO_VALUES_FOUND        = 2
+   OTHERS                 = 3
+          .
+IF SY-SUBRC <> 0.
+* Implement suitable error handling here
+ENDIF.
+
+
+*8.AT SELECTION-SCREEN ON HELP REQUEST FOR <FIELD> for techinical helps documents(f1)
+AT SELECTION-SCREEN ON HELP-REQUEST FOR p_check. " PRESS Fn+F1
+CALL FUNCTION 'HELP_OBJECT_SHOW'
+  EXPORTING
+    DOKCLASS                            = 'TX' "SEE SE61
+*   DOKLANGU                            = SY-LANGU
+    DOKNAME                             = 'ZEVENTS04_DOCUMENTS'
+*   DOKTITLE                            = ' '
+*   CALLED_BY_PROGRAM                   = ' '
+*   CALLED_BY_DYNP                      = ' '
+*   CALLED_FOR_TAB                      = ' '
+*   CALLED_FOR_FIELD                    = ' '
+*   CALLED_FOR_TAB_FLD_BTCH_INPUT       = ' '
+*   MSG_VAR_1                           = ' '
+*   MSG_VAR_2                           = ' '
+*   MSG_VAR_3                           = ' '
+*   MSG_VAR_4                           = ' '
+*   CALLED_BY_CUAPROG                   = ' '
+*   CALLED_BY_CUASTAT                   =
+*   SHORT_TEXT                          = ' '
+*   CLASSIC_SAPSCRIPT                   = ' '
+  TABLES
+    LINKS                               = lt_links "no use
+ EXCEPTIONS
+   OBJECT_NOT_FOUND                    = 1
+   SAPSCRIPT_ERROR                     = 2
+   OTHERS                              = 3
+          .
+IF SY-SUBRC <> 0.
+* Implement suitable error handling here
+ENDIF.
+
+
+
+*9.AT Selection-Screen On <Field> used to VALIDATE wrong input-highlighted
+AT SELECTION-SCREEN ON s_pm. "here other fields get disable like order no.
+  IF s_pm IS NOT INITIAL.
+   if s_pm-low <> 'CASH' AND S_PM-low <> 'Online' AND s_pm <> 'UPI'.
+      MESSAGE e003(ZMESSAGE04).
+   ENDIF.
+  ENDIF.
+
+
+INCLUDE ZINC_EVENTS_F4HELP==
+*&---------------------------------------------------------------------*
+*&  Include           ZINC_EVENTS_F4HELP
+*&---------------------------------------------------------------------*
+lwa_pm-pm = 'C'.
+lwa_pm-desc = 'Cash Payment'.
+APPEND lwa_pm TO lt_pm.
+CLEAR lwa_pm.
+
+lwa_pm-pm = 'U'.
+lwa_pm-desc = 'UPI Payment'.
+APPEND lwa_pm TO lt_pm.
+CLEAR lwa_pm.
+
+lwa_pm-pm = 'N'.
+lwa_pm-desc = 'Net Banking Payment'.
+APPEND lwa_pm TO lt_pm.
+CLEAR lwa_pm.
