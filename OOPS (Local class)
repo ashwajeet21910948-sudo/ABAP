@@ -1,0 +1,60 @@
+*&---------------------------------------------------------------------*
+*& Report  ZOOPS043
+*&
+*&---------------------------------------------------------------------*
+*&
+*&
+*&---------------------------------------------------------------------*
+
+REPORT ZOOPS043.
+
+DATA : lv_erdat type erdat.
+DATA : lv_ernam type ernam.
+DATA : lv_erzet type erzet.
+DATA : lv_vbtyp type vbtyp.
+
+PARAMETERS : p_vbeln type vbeln_va.
+
+CLASS CLASS1 DEFINITION.
+PUBLIC SECTION.
+METHODS DISPLAY IMPORTING pvbeln type vbeln_va "CLASS-METHODS = STSTIC MET ORTHERWISE INSTANCE
+                EXPORTING perdat type erdat
+                          perzet type erzet
+                          pernam type ernam
+                          pvbtyp type vbtyp
+               EXCEPTIONS wrong_input.
+ENDCLASS.
+
+CLASS CLASS1 IMPLEMENTATION.
+  METHOD DISPLAY.
+  select SINGLE erdat erzet ernam vbtyp
+   from vbak
+   into (PERDAT , PERZET , PERNAM , PVBTYP )
+   WHERE VBELN = PVBELN.
+   IF sy-subrc <> 0.
+   RAISE wrong_input.
+   endif.
+
+
+    ENDMETHOD.
+  ENDCLASS.
+
+  START-OF-SELECTION.
+
+  DATA : lo_object type REF TO class1.
+  CREATE OBJECT lo_object.
+  lo_object->display( EXPORTING   pvbeln = p_vbeln
+                        IMPORTING   PERDAT = lv_erdat
+                                    PERZET = lv_erzet
+                                    PERNAM = lv_ernam
+                                    PVBTYP = lv_vbtyp
+                         EXCEPTIONS WRONG_INPUT = 1 ).
+if sy-subrc = 0.
+WRITE : / lv_erdat,
+        / lv_erzet,
+        / lv_ernam,
+        / lv_vbtyp.
+
+ELSE.
+  WRITE : 'WRONG INPUT'.
+ ENDIF.
