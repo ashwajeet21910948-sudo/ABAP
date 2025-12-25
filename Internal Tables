@@ -1,0 +1,250 @@
+INTERNAL TABLES
+
+*&---------------------------------------------------------------------*
+*& Report  ZINTERNAL_TABLES
+*&
+*&---------------------------------------------------------------------*
+*&
+*&
+*&---------------------------------------------------------------------*
+
+REPORT ZINTERNAL_TABLES.
+
+*decleration of internal table.(structure type)---local scope
+*TYPES : BEGIN OF lty_data,
+*        BRANCHID TYPE ZDE_BRANCH_ID,
+*        LOCATION TYPE ZDE_LOC,
+*  END OF lty_data.
+
+
+*
+*  DATA : lt_data type TABLE OF lty_data.
+*  DATA : lwa_data TYPE lty_data. "work area
+*  DATA : lv_lines TYPE I.
+* DATA : lt_data type TABLE OF ZSTRUCTURETYPE. "decleration of int table(structure type) through SE11.--Global use
+*  DATA : lwa_data TYPE ZSTRUCTURETYPE.
+
+*decleartion of int table (through table type)-NEVER USE TYPE TABLE OF,use TYPE
+*TYPES : ltty_data TYPE TABLE OF lty_data. "table type only for internal tables
+*DATA : lt_data TYPE ltty_data.
+*DATA : lt_data TYPE ZTABLETYPE.  "through se11--global
+
+
+*APPEND OPERATION
+*lwa_data-BRANCHID = 1.
+*lwa_data-LOCATION = 'Nagpur'.
+*APPEND lwa_data to lt_data.
+*CLEAR : lwa_data.
+*
+*lwa_data-BRANCHID = 2.
+*lwa_data-LOCATION = 'pune'.
+*APPEND lwa_data to lt_data.  "APPEND statment
+*CLEAR : lwa_data.
+*
+*lwa_data-BRANCHID = 3.
+*lwa_data-LOCATION = 'Mumbai'.
+*APPEND lwa_data to lt_data.
+*CLEAR : lwa_data.
+*
+*lwa_data-BRANCHID = 4.
+*lwa_data-LOCATION = 'Delhi'.
+*APPEND lwa_data to lt_data.
+*CLEAR : lwa_data.
+*
+*lwa_data-BRANCHID = 5.
+*lwa_data-LOCATION = 'Hydrabad'.
+*APPEND lwa_data to lt_data.
+*CLEAR : lwa_data.
+
+
+*DESCRIBE TABLE
+*DESCRIBE TABLE lt_data LINES lv_lines.
+*WRITE : / 'before clear' ,  lv_lines.
+*
+**CLEAR/REFRESH
+*CLEAR lt_data. "or use REFRESH
+*
+*DESCRIBE TABLE lt_data LINES lv_lines.
+*WRITE : /'After clear' , lv_lines.
+
+*SORT TABLE
+
+*SORT lt_data BY BRANCHID DESCENDING."OR ACSENDING is bydefault.
+
+*SORT lt_data BY BRANCHID LOCATION DESCENDING. "VIMP-in this case branid will go for ascending & locatn for descending.SPECIFY IN FRONT OF EVERY COLUNM
+
+
+*DELETE on where condition (case sensitive)
+*DELETE lt_data WHERE LOCATION = 'Nagpur'.
+
+*delete on index no/row no.
+*DELETE lT_data INDEX 2.
+
+*MODIFY
+*LOOP AT lt_data INTO lwa_data.
+*  IF  lwa_data-BRANCHID = 3.
+*    lwa_data-LOCATION = 'Surat'.
+*    MODIFY lt_data FROM lwa_data TRANSPORTING LOCATION."IMP-WHERE TO MODIFY?? IN LOCATION.
+*    ENDIF.
+*  ENDLOOP.
+
+*READ TABLE (it will ONLY shows first matching record)
+*READ TABLE lt_data INTO lwa_data with KEY BRANCHID = 1." It will read 1st record
+*IF SY-SUBRC = 0.
+*  WRITE : / lwa_data-BRANCHID , lwa_data-LOCATION.
+*  ELSE.
+*    WRITE : 'Unsuccesful'."if no record
+*    ENDIF.
+*
+**OR
+*READ TABLE lt_data INTO lwa_data INDEX 3.
+*    IF SY-SUBRC = 0.
+*  WRITE : / lwa_data-BRANCHID , lwa_data-LOCATION.
+*  ENDIF.
+*
+**OR
+*READ TABLE lt_data INTO lwa_data WITH KEY LOCATION = 'Delhi'.
+*IF SY-SUBRC = 0.
+*  WRITE : / lwa_data-BRANCHID , lwa_data-LOCATION.
+*  ENDIF.
+
+
+
+*LOOP AT lt_data INTO lwa_data. "first we pass valut to work area then execute
+*  WRITE :/ lwa_data-BRANCHID , lwa_data-LOCATION.
+*  ENDLOOP.
+
+
+
+
+*COLLECT OPERATION (New table)
+*1.TABLE CREATION
+*  TYPES : BEGIN OF lty_data,
+*          Cname(10) TYPE C,
+*          Dept(10) TYPE c,
+*          Amount TYPE I,
+*    END OF ltY_data.
+*
+*DATA : lt_data TYPE TABLE OF lty_data,
+*       lwa_data TYPE lty_data,
+*       lt_temp_data TYPE TABLE OF lty_data.
+*
+*lwa_data-Cname = 'ABC'. "string values r case sensitive.
+*lwa_data-Dept = 'ADMIN'.
+*lwa_data-Amount = '10000.00'.
+*APPEND lwa_data to lt_data.
+*CLEAR : lwa_data.
+*
+*lwa_data-Cname = 'ABC'.
+*lwa_data-Dept = 'HR'.
+*lwa_data-Amount = '20000.00'.
+*APPEND lwa_data to lt_data.
+*CLEAR : lwa_data.
+*
+*lwa_data-Cname = 'ABC'.
+*lwa_data-Dept = 'HR'.
+*lwa_data-Amount = '20000.00'.
+*APPEND lwa_data to lt_data.
+*CLEAR : lwa_data.
+*
+*lwa_data-Cname = 'ABC'.
+*lwa_data-Dept = 'ADMIN'.
+*lwa_data-Amount = '50000.00'.
+*APPEND lwa_data to lt_data.
+*CLEAR : lwa_data.
+*
+*lwa_data-Cname = 'ABC'.
+*lwa_data-Dept = 'TRAINING'.
+*lwa_data-Amount = '10000.00'.
+*APPEND lwa_data to lt_data.
+*CLEAR : lwa_data.
+*
+*lwa_data-Cname = 'ABC'.
+*lwa_data-Dept = 'HR'.
+*lwa_data-Amount = '20000.00'.
+*APPEND lwa_data to lt_data.
+*CLEAR : lwa_data.
+*
+*LOOP AT lt_data into lwa_data.
+*  COLLECT lwa_data INTO lt_temp_data."VIMP= use new table to collect data,dont use append or same table name,it will be endless loop.
+*  ENDLOOP.
+*
+*  LOOP AT lt_temp_data INTO lwa_data.
+*    WRITE : / lwa_data-Cname , lwa_data-Dept , lwa_data-Amount.
+*    ENDLOOP.
+
+
+
+*SORTED INTERNAL TABLE.
+
+*TYPES : BEGIN OF lty_data,
+*        BRANCHID TYPE ZDE_BRANCH_ID,
+*        LOCATION TYPE ZDE_LOC,
+*  END OF lty_data.
+*
+*  DATA : lt_data TYPE SORTED TABLE OF lty_data WITH UNIQUE KEY BRANCHID."can use multiple fields.
+*  DATA : lwa_data TYPE lty_data.
+*
+*lwa_data-BRANCHID = '2'.
+*lwa_data-LOCATION = 'Nagpur'.
+*INSERT lwa_data INTO TABLE lt_data.
+*CLEAR : lwa_data.
+*
+*lwa_data-BRANCHID = '1'. "in UNIQUE KEY,if duplicate BrID is inserted it will not accept.
+*lwa_data-LOCATION = 'DELHI'.
+*INSERT lwa_data INTO TABLE lt_data.
+*CLEAR : lwa_data.
+*
+*lwa_data-BRANCHID = '4'.
+*lwa_data-LOCATION = 'MUMBAI'.
+*INSERT lwa_data INTO TABLE lt_data.
+*CLEAR : lwa_data.
+*
+*lwa_data-BRANCHID = '3'.
+*lwa_data-LOCATION = 'PUNE'.
+*INSERT lwa_data INTO TABLE lt_data.
+*CLEAR : lwa_data.
+*
+*
+*LOOP AT lt_data INTO lwa_data.
+*  WRITE : / lwa_data-BRANCHID , lwa_data-LOCATION.
+*  ENDLOOP.
+
+*HASHES TABLES
+
+  TYPES : BEGIN OF lty_data,
+        BRANCHID TYPE ZDE_BRANCH_ID,
+        LOCATION TYPE ZDE_LOC,
+  END OF lty_data.
+
+  DATA : lt_data TYPE HASHED TABLE OF lty_data WITH UNIQUE KEY BRANCHID.
+  DATA : lwa_data TYPE lty_data.
+
+lwa_data-BRANCHID = '1'.
+lwa_data-LOCATION = 'PUNE'.
+INSERT lwa_data INTO TABLE lt_data.
+CLEAR : lwa_data.
+
+lwa_data-BRANCHID = '2'.
+lwa_data-LOCATION = 'DELHI'.
+INSERT lwa_data INTO TABLE lt_data.
+CLEAR : lwa_data.
+
+lwa_data-BRANCHID = '3'.
+lwa_data-LOCATION = 'LATUR'.
+INSERT lwa_data INTO TABLE lt_data.
+CLEAR : lwa_data.
+
+lwa_data-BRANCHID = '5'.
+lwa_data-LOCATION = 'NAGPUR'.
+INSERT lwa_data INTO TABLE lt_data.
+CLEAR : lwa_data.
+
+lwa_data-BRANCHID = '4'.
+lwa_data-LOCATION = 'KOCHI'.
+INSERT lwa_data INTO TABLE lt_data.
+CLEAR : lwa_data.
+
+LOOP AT lt_data INTO lwa_data.
+  WRITE : / lwa_data-BRANCHID , lwa_data-LOCATION.
+  ENDLOOP.
