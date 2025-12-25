@@ -1,0 +1,47 @@
+*&---------------------------------------------------------------------*
+*& Report  ZCTRL_STATMENTS04
+*&
+*&---------------------------------------------------------------------*
+*&
+*&
+*&---------------------------------------------------------------------*
+
+REPORT ZCTRL_STATMENTS04. "Q-total all based on payment mode
+
+TYPES : BEGIN OF LTY_DATA,
+        PM TYPE ZDPM,
+        QUANTITY TYPE ZDQUANTITY,
+        END OF LTY_DATA.
+
+DATA : LV_PM TYPE ZDPM.
+DATA : LT_DATA TYPE TABLE OF LTY_DATA.
+DATA : LWA_DATA TYPE LTY_DATA.
+DATA : LWA_TEMP TYPE LTY_DATA.
+
+SELECT-OPTIONS : S_PM FOR LV_PM NO INTERVALS.
+
+SELECT PM QUANTITY "VIMP=PM should be at first place only,there shd be nothing on left of PM
+  FROM ZORDER_04 "best-make another i_table and pass data to that tab by append
+  INTO TABLE LT_DATA
+  WHERE PM IN S_PM.
+
+SORT LT_DATA BY PM. "NECESSARY-VIMP
+
+LOOP AT LT_DATA INTO LWA_DATA.
+  lwa_temp = lwa_data. "solution for **** in output,pass all values ti temp work area.
+
+  AT FIRST.
+    WRITE : / 'The sum is'.
+  ENDAT.
+  AT NEW PM.
+    WRITE :/ lwa_temp-PM.
+  ENDAT.
+  AT END OF PM.
+    WRITE :  lwa_temp-QUANTITY.
+  ENDAT.
+
+  AT LAST.
+    WRITE : / 'End of output'.
+  ENDAT.
+
+ENDLOOP.
