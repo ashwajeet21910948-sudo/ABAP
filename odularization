@@ -1,0 +1,227 @@
+*MODULARIZATION
+
+*&---------------------------------------------------------------------*
+*& Report  ZMODULARISATION_04
+*&
+*&---------------------------------------------------------------------*
+*&
+*&
+*&---------------------------------------------------------------------*
+
+REPORT ZMODULARISATION_04. "MESSAGE-ID MESSAGE04.
+
+
+*INCLUDE ZREPORTS04INCLUDE.
+*
+* PARAMETERS : p_clg_eg TYPE ZDE_CLG_REG_NO,
+*              LOCATION TYPE ZDE_LOC.
+*
+* SELECT  CLG_EG_NO LOCATION PIN
+* FROM ZCLG_MASTER
+* INTO TABLE  lt_data
+* WHERE CLG_EG_NO = p_clg_eg
+* AND LOCATION = LOCATION.
+*
+*
+* LOOP AT lt_data INTO lwa_data.
+* WRITE : / lwa_data-CLG_EG_NO ,  lwa_data-LOCATION ,  lwa_data-PIN.
+* endloop.
+
+
+*Function module
+DATA : lv_output TYPE NUMC3.
+
+PARAMETERS : p_input1 TYPE NUMC2.
+PARAMETERS : p_input2 TYPE NUMC2.
+
+
+CALL FUNCTION 'ZFM_SUM'
+  EXPORTING
+    PINPUT1        = p_input1
+    PINPUT2        = p_input2
+ IMPORTING
+   POUTPUT        = lv_output
+ EXCEPTIONS
+   NOT_ZERO       = 1
+   OTHERS         = 2
+          .
+IF SY-SUBRC <> 0.
+MESSAGE E004(ZMESSAGE04).
+ELSE.
+WRITE : 'sum of 2 numbers is' , lv_output.
+ENDIF.
+
+
+*Reports through FM Method
+*DATA : lt_output TYPE ZTT_ORDER_DISPALY, "table word not used as alreadt table type by se11 is used.
+*       lwa_output TYPE ZTR_ORDER_DISPALY.
+*
+*PARAMETERS : p_ono TYPE ZDONO.
+*
+*CALL FUNCTION 'ZFM_ORDER_DISPLAY'
+*  EXPORTING
+*    P_ONO          = p_ono
+* IMPORTING
+*   LT_FINAL       = lt_output.
+*
+*
+*LOOP AT lt_output INTO lwa_output.
+*
+*WRITE: / lwa_output-ono , lwa_output-odate , lwa_output-pm , lwa_output-oitm ,lwa_output-orddes.
+*
+*ENDLOOP.
+
+
+
+*Reports through FM method for Range of output
+*DATA : lv_ono TYPE ZDONO,
+*       lt_output TYPE ZTT_ORDER_DISPALY,
+*       lwa_output TYPE ZTR_ORDER_DISPALY.
+*
+*SELECT-OPTIONS : s_ono FOR lv_ono.
+*
+*CALL FUNCTION 'ZFM_ORDER_RANGE'
+*  EXPORTING
+*    SONO           = s_ono[]
+* IMPORTING
+*   LT_FINAL       = lt_output.
+*
+*
+*LOOP AT lt_output INTO lwa_output.
+*
+*  WRITE: / lwa_output-ono , lwa_output-odate , lwa_output-pm ,
+*           lwa_output-oitm ,lwa_output-orddes.
+*
+*ENDLOOP.
+
+
+
+*SUBROUTION (WITHOUT PARAMETERS)
+
+*DATA : lv_output TYPE NUMC3.
+*
+*PARAMETERS : p_input1 TYPE NUMC2,
+*             p_input2 TYPE NUMC2.
+*
+*
+*PERFORM ADDITION."name of subroutien ,double click to see logic
+*
+*WRITE : 'sum of 2 numbers is' , lv_output.
+*
+*INCLUDE zmodularisation_04_additionf01.
+
+
+*SUBROUTIEN (WITH PARAMETERS)
+*
+*DATA : lv_output TYPE NUMC3.
+*
+*PARAMETERS : p_input1 TYPE NUMC2,
+*             p_input2 TYPE NUMC2.
+*
+*PERFORM SUM USING p_input1 p_input2 CHANGING lv_output."Actual Parameters
+*
+*WRITE : 'sum of 2 numbers is' , lv_output.
+*
+*INCLUDE zmodularisation_04_sumf01.
+
+
+*SUBROUTIEN ON INTERNAL TABLE(PRACTICE)
+
+*TYPES : BEGIN OF lty_data,
+*        BRANCHID TYPE ZDE_BRANCH_ID,
+*        LOCATION TYPE ZDE_LOC,
+*  END OF lty_data.
+*
+*  DATA : lt_data type TABLE OF lty_data.
+*  DATA : lwa_data TYPE lty_data.
+*
+*PERFORM set_data USING '1'  'NAGPUR' CHANGING lt_data. "2 USING PARA,1 CHANGING PARAMETER.
+*PERFORM set_data USING '2'  'Pune' CHANGING lt_data.
+*PERFORM set_data USING '3'  'Mumbai' CHANGING lt_data.
+*PERFORM set_data USING '4'  'Delhi' CHANGING lt_data.
+*PERFORM set_data USING '5'  'Hydrabad' CHANGING lt_data.
+*
+*
+*LOOP AT lt_data INTO lwa_data.
+*  WRITE :/ lwa_data-BRANCHID , lwa_data-LOCATION.
+*  ENDLOOP.
+*
+*INCLUDE zmodularisation_04_set_dataf01.
+
+
+
+*MACROS
+*DATA : lv_output TYPE I.
+*
+*PARAMETERS : p_input1 TYPE I.
+*PARAMETERS : p_input2 TYPE I.
+*PARAMETERS : p_r1 TYPE C RADIOBUTTON GROUP r1.
+*PARAMETERS : p_r2 TYPE C RADIOBUTTON GROUP r1.
+*PARAMETERS : p_r3 TYPE C RADIOBUTTON GROUP r1.
+*
+*DEFINE operation. "MACROS
+*WRITE :'The output is' , &1. "Macro With Placeholders use & (max 9)- to pass values at runtime
+* END-OF-DEFINITION.
+*
+*IF p_r1 = 'X'.
+*lv_output = p_input1 + p_input2.
+*operation lv_output.
+*ENDIF.
+*
+*IF p_r2 = 'X'.
+*lv_output = p_input1 - p_input2.
+*operation lv_output.
+*ENDIF.
+*
+*IF p_r3 = 'X'.
+*lv_output = p_input1 * p_input2.
+*operation lv_output.
+*ENDIF.
+
+
+*MACROS (Practice)
+
+*DATA : lv_output TYPE I.
+*
+*PARAMETERS : p_input1 TYPE I.
+*PARAMETERS : p_input2 TYPE I.
+*PARAMETERS : p_r1 TYPE C RADIOBUTTON GROUP r1.
+*PARAMETERS : p_r2 TYPE C RADIOBUTTON GROUP r1.
+*PARAMETERS : p_r3 TYPE C RADIOBUTTON GROUP r1.
+*PARAMETERS : p_r4 TYPE C RADIOBUTTON GROUP r1.
+*
+*DEFINE FM_CALLING.
+*  CALL FUNCTION &1
+*  EXPORTING
+*  PINPUT1 = &2
+*  PINPUT2 = &3
+*  IMPORTING
+*  POUTPUT = &4.
+* WRITE : &4.
+*  END-OF-DEFINITION.
+*
+*IF p_r1 = 'X'.
+*  FM_CALLING 'ZFMMACROS' p_input1 p_input2 lv_output.
+**CALL FUNCTION 'ZFMMACROS'
+**  EXPORTING
+**    PINPUT1       = p_input1 (this whole part is in macros)
+**    PINPUT2       = p_input2
+** IMPORTING
+**   POUTPUT       = lv_output
+**          .
+**WRITE : lv_output.
+*ENDIF.
+*
+*IF p_r2 = 'X'.
+*  FM_CALLING 'ZFMMACROS2' p_input1 p_input2 lv_output.
+*ENDIF.
+*
+*IF p_r3 = 'X'.
+*  FM_CALLING 'ZFMMACROS3' p_input1 p_input2 lv_output.
+*ENDIF.
+*
+*IF p_r4 = 'X'.
+*  FM_CALLING 'ZFMMACROS4' p_input1 p_input2 lv_output.
+*ENDIF.
+
+INCLUDE zmodularisation_04_additionf02.
