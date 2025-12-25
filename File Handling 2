@@ -1,0 +1,95 @@
+*&---------------------------------------------------------------------*
+*& Report  ZFILE_042
+*&
+*&---------------------------------------------------------------------*
+*&
+*&
+*&---------------------------------------------------------------------*
+
+REPORT ZFILE_042.
+*Writing Data to a File on Application Server (AL11 T CODE)
+
+*DATA : LV_ONO TYPE ZDONO.
+*DATA : LV_FILENAME(40) TYPE C VALUE 'C:\usr\sap\CCMS\ new order.txt'. " al 11 directory
+*DATA : LV_STRING TYPE STRING.
+*
+*TYPES : BEGIN  OF LTY_DATA,
+*        ONO TYPE ZDONO,
+*        ODATE TYPE ZDODATE,
+*        PM TYPE ZDPM,
+*        END OF LTY_DATA.
+*
+*DATA : LT_DATA TYPE TABLE OF LTY_DATA,
+*       LWA_DATA TYPE LTY_DATA.
+*
+*SELECT-OPTIONS : S_ONO FOR LV_ONO.
+*
+*SELECT ONO ODATE PM
+*  FROM ZORDER_04
+*  INTO TABLE LT_DATA
+*  WHERE ONO IN S_ONO.
+*
+*OPEN DATASET LV_FILENAME FOR OUTPUT IN TEXT MODE ENCODING DEFAULT. "to write data
+*
+*IF SY-SUBRC = 0.
+*
+*  LOOP AT LT_DATA INTO LWA_DATA.
+*    CONCATENATE LWA_DATA-ONO  LWA_DATA-ODATE  LWA_DATA-PM INTO LV_STRING SEPARATED BY '#'.
+*    TRANSFER LV_STRING TO LV_FILENAME.
+*  ENDLOOP.
+*
+*  CLOSE DATASET LV_FILENAME.
+*
+*WRITE : 'SUCCESS-CHECK AL11'.
+*ENDIF.
+
+*****************************************************************************************************
+*Reading data on file on app server(READ FROM ALL11 directory)
+
+DATA : LV_FILENAME(40) TYPE C VALUE 'C:\usr\sap\CCMS\ new order.txt'.
+DATA : LV_STRING TYPE STRING.
+DATA :lv_afile(60) VALUE '\\ECCEhp7.erp.com\sapmnt\EH7\SYS\src/order.txt'.
+
+TYPES : BEGIN  OF LTY_DATA,
+        ONO TYPE ZDONO,
+        ODATE TYPE ZDODATE,
+        PM TYPE ZDPM,
+        END OF LTY_DATA.
+
+DATA : LT_DATA TYPE TABLE OF LTY_DATA,
+       LWA_DATA TYPE LTY_DATA.
+
+OPEN DATASET LV_FILENAME FOR INPUT IN TEXT MODE ENCODING DEFAULT.
+
+IF SY-SUBRC = 0.
+
+  DO.
+    READ DATASET LV_FILENAME  INTO LV_STRING.
+    IF SY-SUBRC =  0.
+      SPLIT lv_string at '#' into LWA_DATA-ONO  LWA_DATA-ODATE  LWA_DATA-PM.
+      APPEND lwa_data to lt_data.
+      CLEAR lwa_data.
+    ELSE.
+      EXIT.
+    ENDIF.
+  ENDDO.
+  CLOSE DATASET LV_FILENAME.
+
+ENDIF.
+********************************************************
+OPEN DATASET lv_afile FOR OUTPUT IN TEXT MODE ENCODING DEFAULT."Archiving
+IF SY-SUBRC = 0.
+
+  LOOP AT LT_DATA INTO LWA_DATA.
+    CONCATENATE LWA_DATA-ONO  LWA_DATA-ODATE  LWA_DATA-PM INTO LV_STRING SEPARATED BY '#'.
+   TRANSFER LV_STRING TO LV_AFILE.
+   ENDLOOP.
+   CLOSE DATASET LV_AFILE.
+   DELETE DATASET lv_filename."deleting previous and adding to new
+
+  ENDIF.
+******************************************************
+
+LOOP AT LT_DATA INTO LWA_DATA.
+  WRITE : / LWA_DATA-ONO , LWA_DATA-ODATE , LWA_DATA-PM.
+  endloop.
