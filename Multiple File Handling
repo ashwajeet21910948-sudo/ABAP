@@ -1,0 +1,94 @@
+*&---------------------------------------------------------------------*
+*& Report  ZFILE_043
+*&
+*&---------------------------------------------------------------------*
+*&
+*&
+*&---------------------------------------------------------------------*
+
+REPORT ZFILE_043.
+*task- move record to new directory,delete from old and update in database tble
+
+DATA : LT_FILES TYPE TABLE OF SALFLDIR.
+DATA : LV_DIRNAME TYPE SALFILE-LONGNAME.
+DATA : LWA_FILES TYPE SALFLDIR.
+DATA : LV_FILENAME(50) TYPE C.
+DATA : LV_STRING TYPE STRING.
+DATA : LV_ENAME(40) TYPE C.
+DATA : LV_EAGE(40) TYPE N.
+DATA : LV_EDES(40) TYPE C.
+DATA : LWA_EMP TYPE ZFILE_HANDEL." database table
+DATA : LT_EMP TYPE TABLE OF ZFILE_HANDEL.
+DATA : lv_adir(50) TYPE c value '\\ECCEhp7.erp.com\sapmnt\EH7\SYS\src'."new al 11 directory
+DATA : lv_afilename(50) type c.
+DATA : lv_astring(50) type c.
+
+PARAMETERS : P_DIR(40) TYPE C DEFAULT 'C:\usr\sap\CCMS' LOWER CASE.
+
+START-OF-SELECTION.
+
+  LV_DIRNAME = P_DIR.
+
+  CALL FUNCTION 'RZL_READ_DIR_LOCAL'
+    EXPORTING
+      NAME               = LV_DIRNAME
+*     FROMLINE           = 0
+*     NRLINES            = 1000
+    TABLES
+      FILE_TBL           = LT_FILES
+    EXCEPTIONS
+      ARGUMENT_ERROR     = 1
+      NOT_FOUND          = 2
+      NO_ADMIN_AUTHORITY = 3
+      OTHERS             = 4.
+  IF SY-SUBRC <> 0.
+* Implement suitable error handling here
+  ENDIF.
+
+  DELETE LT_FILES WHERE NAME NP 'Emp*'. "no pattern-delete files not containig emp.
+
+  LOOP AT LT_FILES INTO LWA_FILES.
+    CONCATENATE P_DIR '/' LWA_FILES-NAME INTO LV_FILENAME.
+    OPEN DATASET LV_FILENAME FOR INPUT IN TEXT MODE ENCODING DEFAULT.
+    IF SY-SUBRC = 0.
+      DO.
+        READ DATASET LV_FILENAME INTO LV_STRING.
+        IF SY-SUBRC = 0.
+          SPLIT LV_STRING AT CL_ABAP_CHAR_UTILITIES=>HORIZONTAL_TAB INTO LV_ENAME LV_EAGE  LV_EDES.
+          LWA_EMP-ENAME = LV_ENAME.
+          LWA_EMP-EAGE = LV_EAGE.
+          LWA_EMP-ECITY = LV_EDES.
+          APPEND LWA_EMP TO LT_EMP.
+          CLEAR : LWA_EMP.
+        ELSE.
+          EXIT.
+        ENDIF.
+      ENDDO.
+      CLOSE DATASET LV_FILENAME.
+    ENDIF.
+
+    IF LT_EMP IS NOT INITIAL. "inserting data in databse table
+      DELETE LT_EMP INDEX 1. " delete 1st record as its title
+      INSERT ZFILE_HANDEL FROM TABLE LT_EMP.
+      IF SY-SUBRC = 0.
+        WRITE : 'File inserted successfully' , LWA_FILES-NAME.
+      ELSE.
+        WRITE : 'Problem with file' , LWA_FILES-NAME.
+      ENDIF.
+    ENDIF.
+
+   CONCATENATE lv_adir '/' lwa_files-name INTO lv_afilename.
+    OPEN DATASET lv_afilename FOR OUTPUT IN TEXT MODE ENCODING DEFAULT.
+
+    IF sy-subrc = 0.
+      LOOP AT lt_emp into lwa_emp.
+        CONCATENATE LWA_EMP-ENAME LWA_EMP-EAGE LWA_EMP-ECITY INTO lv_astring SEPARATED BY CL_ABAP_CHAR_UTILITIES=>HORIZONTAL_TAB.
+        TRANSFER lv_astring to lv_afilename.
+        endloop.
+        CLOSE DATASET lv_afilename.
+      endif.
+      DELETE DATASET lv_filename.
+REFRESH : lt_emp.
+  ENDLOOP.
+  
+* now files r in new directory,channge to see again
