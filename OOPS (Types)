@@ -1,0 +1,124 @@
+*&---------------------------------------------------------------------*
+*& Report  ZOOPS_TYPES042
+*&
+*&---------------------------------------------------------------------*
+*&
+*&
+*&---------------------------------------------------------------------*
+
+REPORT ZOOPS_TYPES042. (OOPS TYPES)
+DATA :  LV_VBELN TYPE VBELN_VA.
+
+    TYPES:
+      BEGIN OF LTY_output, "yaha alag se declare karna padta hai,neechi class men hai
+            VBELN TYPE VBELN_VA,
+            ERDAT TYPE ERDAT,
+            ERNAM TYPE ERNAM,
+            ERZET TYPE ERZET,
+            POSNR TYPE POSNR_VA,
+            MANTR TYPE MATNR,
+      END OF LTY_output .
+
+ DATA : lt_output type table of lty_output.
+ DATA : lwa_output TYPE LTY_output.
+
+
+
+
+SELECT-OPTIONS : s_vbeln for lv_vbeln DEFAULT 5000 TO 5050.
+
+CLASS CLASS1 DEFINITION.
+  PUBLIC SECTION.
+  TYPES : BEGIN OF lty_vbeln,
+         sign type char1,
+         option type char2,
+         low type vbeln_va,
+         high type vbeln_va,
+    END OF lty_vbeln.
+
+    TYPES ltty_vbeln type TABLE OF lty_vbeln.
+
+    TYPES:
+      BEGIN OF LTY_OUTPUT,
+            VBELN TYPE VBELN_VA,
+            ERDAT TYPE ERDAT,
+            ERNAM TYPE ERNAM,
+            ERZET TYPE ERZET,
+            POSNR TYPE POSNR_VA,
+            MANTR TYPE MATNR,
+      END OF LTY_OUTPUT .
+    TYPES:
+      LTTY_OUTPUT TYPE TABLE OF LTY_OUTPUT .
+
+    TYPES : BEGIN OF LTY_VBAP,
+            VBELN TYPE VBELN_VA,
+            POSNR TYPE POSNR_VA,
+            MATNR TYPE MATNR,
+            END OF LTY_VBAP.
+
+
+    TYPES:
+      BEGIN OF LTY_VBAK,
+           VBELN TYPE VBELN_VA,
+           ERDAT TYPE ERDAT,
+           ERZET TYPE ERZET,
+           ERNAM TYPE ERNAM,
+           VBTYP TYPE VBTYP,
+           END OF LTY_VBAK .
+
+  METHODS  GET_DATA IMPORTING svbeln type ltty_vbeln
+                    EXPORTING toutput type ltty_output.
+
+
+  ENDCLASS.
+
+  CLASS CLASS1 IMPLEMENTATION.
+    METHOD get_data.
+
+    DATA : LT_VBAK TYPE TABLE OF LTY_VBAK.
+    DATA : LS_VBAK TYPE  LTY_VBAK.
+    DATA : LT_VBAP TYPE TABLE OF LTY_VBAP.
+    DATA : LS_VBAP TYPE  LTY_VBAP.
+
+    DATA : lwa_output TYPE LTY_OUTPUT.
+
+
+    SELECT VBELN ERDAT ERZET ERNAM
+      FROM VBAK
+      INTO TABLE LT_VBAK
+      WHERE VBELN IN SVBELN.
+
+    IF LT_VBAK IS NOT INITIAL.
+      SELECT VBELN POSNR MATNR
+        FROM VBAP
+        INTO TABLE LT_VBAP
+        FOR ALL ENTRIES IN LT_VBAK
+        WHERE VBELN = LT_VBAK-VBELN.
+    ENDIF.
+
+    LOOP AT LT_VBAK INTO LS_VBAK.
+      LOOP AT LT_VBAP INTO LS_VBAP WHERE VBELN = LS_VBAK-VBELN.
+        lwa_output-VBELN = LS_VBAK-VBELN.
+        lwa_output-ERDAT = LS_VBAK-ERDAT.
+        lwa_output-ERZET = LS_VBAK-ERZET.
+        lwa_output-ERNAM = LS_VBAK-ERNAM.
+        lwa_output-POSNR = LS_VBAP-POSNR.
+        lwa_output-MANTR = LS_VBAP-MATNR.
+        APPEND lwa_output TO TOUTPUT.
+        CLEAR lwa_output.
+      ENDLOOP.
+      ENDLOOP.
+ endmethod.
+    ENDCLASS.
+
+ START-OF-SELECTION.
+
+DATA : lo_object type REF TO class1.
+    create OBJECT lo_object.
+    lo_object->get_data( EXPORTING svbeln = s_vbeln[]
+                         IMPORTING toutput = lt_output ) .
+
+    loop at lt_output into lwa_output.
+      WRITE : / lwa_output-vbeln , lwa_output-ERDAT , lwa_output-ERZET, lwa_output-ERNAM ,
+        lwa_output-ERNAM , lwa_output-POSNR , lwa_output-POSNR , lwa_output-MANTR.
+      endloop.
