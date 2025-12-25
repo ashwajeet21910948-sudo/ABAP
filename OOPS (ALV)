@@ -1,0 +1,214 @@
+*ALV OOPS2
+*&---------------------------------------------------------------------*
+*& Report  ZOOPS_ALV041
+*&
+*&---------------------------------------------------------------------*
+*&
+*&
+*&---------------------------------------------------------------------*
+
+REPORT ZOOPS_ALV041.
+*task? double click on 1st table order then disply details of 2nd table on 2nd screen
+TABLES : VBAK.
+
+TYPES  : BEGIN OF lty_vbak,
+         vbeln type vbeln_va,
+         erdat type erdat,
+         erzet type erzet,
+         ernam type ernam,
+         vbtyp type vbtyp,
+         end of lty_vbak.
+
+DATA : lt_vbak type TABLE OF lty_vbak.
+DATA : ls_vbak type  lty_vbak.
+
+TYPES : BEGIN OF lty_vbap,
+          vbeln type vbeln_va,
+          posnr type posnr_va,
+          matnr type matnr,
+          end of lty_vbap.
+
+     DATA : lt_vbap type TABLE OF lty_vbap.
+     DATA : ls_vbap type  lty_vbap.
+
+  DATA : lt_fieldcat1 type  LVC_T_FCAT.
+  DATA : ls_fieldcat1 type LVC_S_FCAT.
+  DATA : lt_fieldcat2 type  LVC_T_FCAT.
+  DATA : ls_fieldcat2 type LVC_S_FCAT.
+  DATA : lo_cont1 type REF TO  CL_GUI_CUSTOM_CONTAINER.
+  DATA : lo_cont2 type REF TO  CL_GUI_CUSTOM_CONTAINER.
+  DATA : lo_alv1 type REF TO  CL_GUI_ALV_GRID.
+  DATA : lo_alv2 type REF TO  CL_GUI_ALV_GRID.
+  DATA : lt_rows type LVC_T_ROW.
+  DATA : ls_rows type LVC_S_ROW.
+
+SELECT-OPTIONS : s_vbeln for vbak-vbeln DEFAULT 5000 TO 5050.
+
+  CLASS CLASS1 DEFINITION.
+    PUBLIC SECTION.
+METHODS HANDLE FOR EVENT HOTSPOT_CLICK OF CL_GUI_ALV_GRID. "double click is in gui table
+  ENDCLASS.
+
+  CLASS CLASS1 IMPLEMENTATION.
+ METHOD HANDLE.
+   CALL METHOD LO_ALV1->GET_SELECTED_ROWS
+     IMPORTING
+       ET_INDEX_ROWS = lt_rows.
+
+READ TABLE lt_rows into ls_rows index 1.
+IF sy-subrc = 0.
+READ TABLE lt_vbak into ls_vbak INDEX ls_rows-INDEX.
+IF sy-subrc = 0.
+  SELECT vbeln posnr matnr
+      from vbap
+      into table lt_vbap
+    WHERE vbeln = ls_vbak-vbeln.
+
+ CALL METHOD LO_ALV2->SET_TABLE_FOR_FIRST_DISPLAY
+
+   CHANGING
+     IT_OUTTAB                     = lt_vbap
+     IT_FIELDCATALOG               = lt_fieldcat2
+*     IT_SORT                       =
+*     IT_FILTER                     =
+   EXCEPTIONS
+     INVALID_PARAMETER_COMBINATION = 1
+     PROGRAM_ERROR                 = 2
+     TOO_MANY_LINES                = 3
+     OTHERS                        = 4
+         .
+ IF SY-SUBRC <> 0.
+*  Implement suitable error handling here
+ ENDIF.
+  endif.
+  ENDIF.
+
+ ENDMETHOD.
+  ENDCLASS.
+
+START-OF-SELECTION.
+
+SELECT vbeln erdat erzet ernam vbtyp
+  from vbak
+  into TABLE lt_vbak
+  where vbeln IN s_vbeln.
+
+ls_fieldcat1-col_pos = '1'.
+ls_fieldcat1-fieldname = 'VBELN'.
+ls_fieldcat1-tabname = 'lt_vbak'.
+ls_fieldcat1-HOTSPOT = 'X'.
+ls_fieldcat1-SCRTEXT_L = 'Sales Document Number'.
+APPEND ls_fieldcat1 to lt_fieldcat1.
+CLEAR ls_fieldcat1.
+
+ls_fieldcat1-col_pos = '2'.
+ls_fieldcat1-fieldname = 'ERDAT'.
+ls_fieldcat1-tabname = 'lt_vbak'.
+ls_fieldcat1-SCRTEXT_L = 'Creation Date'.
+APPEND ls_fieldcat1 to lt_fieldcat1.
+CLEAR ls_fieldcat1.
+
+ls_fieldcat1-col_pos = '3'.
+ls_fieldcat1-fieldname = 'ERZET'.
+ls_fieldcat1-tabname = 'lt_vbak'.
+ls_fieldcat1-SCRTEXT_L = 'Time'.
+APPEND ls_fieldcat1 to lt_fieldcat1.
+CLEAR ls_fieldcat1.
+
+ls_fieldcat1-col_pos = '4'.
+ls_fieldcat1-fieldname = 'ERNAM'.
+ls_fieldcat1-tabname = 'lt_vbak'.
+ls_fieldcat1-SCRTEXT_L = 'User Name'.
+APPEND ls_fieldcat1 to lt_fieldcat1.
+CLEAR ls_fieldcat1.
+
+ls_fieldcat1-col_pos = '5'.
+ls_fieldcat1-fieldname = 'VBTP'.
+ls_fieldcat1-tabname = 'lt_vbak'.
+ls_fieldcat1-SCRTEXT_L = 'Category'.
+APPEND ls_fieldcat1 to lt_fieldcat1.
+CLEAR ls_fieldcat1.
+
+CREATE OBJECT lo_cont1
+EXPORTING
+  CONTAINER_NAME = 'CONT1'.
+
+CREATE OBJECT lo_alv1
+EXPORTING
+  I_PARENT = lo_cont1.
+
+CALL METHOD LO_ALV1->SET_TABLE_FOR_FIRST_DISPLAY
+
+  CHANGING
+    IT_OUTTAB                     = lt_vbak
+    IT_FIELDCATALOG               = lt_fieldcat1
+*    IT_SORT                       =
+*    IT_FILTER                     =
+*  EXCEPTIONS
+*    INVALID_PARAMETER_COMBINATION = 1
+*    PROGRAM_ERROR                 = 2
+*    TOO_MANY_LINES                = 3
+*    OTHERS                        = 4
+        .
+IF SY-SUBRC <> 0.
+* Implement suitable error handling here
+ENDIF.
+
+
+ls_fieldcat2-col_pos = '1'.
+ls_fieldcat2-fieldname = 'VBELN'.
+ls_fieldcat2-tabname = 'lt_vbap'.
+
+ls_fieldcat2-SCRTEXT_L = 'Sales Document Number'.
+APPEND ls_fieldcat2 to lt_fieldcat2.
+CLEAR ls_fieldcat2.
+
+ls_fieldcat2-col_pos = '2'.
+ls_fieldcat2-fieldname = 'POSNR'.
+ls_fieldcat2-tabname = 'lt_vbap'.
+ls_fieldcat2-SCRTEXT_L = 'Item Number'.
+APPEND ls_fieldcat2 to lt_fieldcat2.
+CLEAR ls_fieldcat2.
+
+ls_fieldcat2-col_pos = '3'.
+ls_fieldcat2-fieldname = 'MATNR'.
+ls_fieldcat2-tabname = 'lt_vbap'.
+ls_fieldcat2-SCRTEXT_L = 'Material Number'.
+APPEND ls_fieldcat2 to lt_fieldcat2.
+CLEAR ls_fieldcat2.
+
+CREATE OBJECT lo_cont2
+EXPORTING
+  CONTAINER_NAME = 'CONT2'.
+
+CREATE OBJECT lo_alv2
+EXPORTING
+  I_PARENT = lo_cont2.
+
+CALL METHOD LO_ALV2->SET_TABLE_FOR_FIRST_DISPLAY
+
+  CHANGING
+    IT_OUTTAB                     = lt_vbap
+    IT_FIELDCATALOG               = lt_fieldcat2
+*    IT_SORT                       =
+*    IT_FILTER                     =
+  EXCEPTIONS
+    INVALID_PARAMETER_COMBINATION = 1
+    PROGRAM_ERROR                 = 2
+    TOO_MANY_LINES                = 3
+    OTHERS                        = 4
+        .
+IF SY-SUBRC <> 0.
+* Implement suitable error handling here
+ENDIF.
+
+DATA :LO_OBJECT TYPE REF TO class1.
+CREATE OBJECT lo_object.
+SET HANDLER lo_object->HANDLE FOR lo_alv1.
+
+CALL SCREEN '0100'.
+
+
+INCLUDE zoops_alv041_user_command_0i01.
+
+INCLUDE zoops_alv041_status_0100o01.
