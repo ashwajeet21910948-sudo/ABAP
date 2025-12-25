@@ -1,0 +1,118 @@
+*&---------------------------------------------------------------------*
+*& Report  ZINTERACTIVE_REPORTS04
+*&
+*&---------------------------------------------------------------------*
+*&
+*&
+*&---------------------------------------------------------------------*
+
+REPORT ZINTERACTIVE_REPORTS04.
+*
+INCLUDE ZINCLUDE_SUBROUTIEN_TAB3.
+INCLUDE ZINCLUDE_SUBROUTIEN_TAB2.
+
+
+DATA : LV_ONO TYPE ZDONO.
+DATA : LV_VALUE(30) TYPE C. "FOR GET CURSOR
+DATA : LV_FIELD(30) TYPE C. "FOR GET CURSOR
+
+SELECT-OPTIONS : S_ONO FOR LV_ONO DEFAULT 1 TO 10.
+
+START-OF-SELECTION.
+
+  SELECT ONO ODATE PM
+  FROM ZORDER_04
+  INTO TABLE LT_DATA
+  WHERE ONO IN S_ONO.
+
+  LOOP AT LT_DATA INTO LWA_DATA.
+    WRITE : / LWA_DATA-ONO ,LWA_DATA-ODATE , LWA_DATA-PM.
+*HIDE : lwa_data-ono ,lwa_data-odate , lwa_data-pm."(comment THIS if using SY-LISEL)
+  ENDLOOP.
+
+*AT LINE-SELECTION. "(comment from here if using SY-LISEL)
+*SELECT ono oitm orddes
+*FROM zitem_tab04
+*INTO TABLE lt_data1
+*WHERE ono = lwa_data-ono. DIFFERENT HERE
+
+*LOOP AT lt_data1 into lwa_data1.
+*WRITE : / lwa_data1-ono ,lwa_data1-oitm , lwa_data1-orddes.
+*  ENDLOOP.
+********************************************************************************************
+
+AT LINE-SELECTION. "(eithe use sy-lisel or HIDE statment)
+SELECT ono oitm orddes
+FROM zitem_tab04
+INTO TABLE lt_data1
+WHERE ono = SY-LISEL+0(5). "order no has 6 digits,and it starts from0
+
+LOOP AT lt_data1 into lwa_data1.
+WRITE : / lwa_data1-ono ,lwa_data1-oitm , lwa_data1-orddes.
+  ENDLOOP.
+***********************************************************************************************
+
+*AT LINE-SELECTION. "For GET CURSOR FIELD (response for every field click)
+*
+*GET CURSOR FIELD lv_field VALUE lv_value.
+*
+*IF lv_field = 'LWA_DATA-ONO'.
+*
+*  SELECT ono oitm orddes
+*  FROM zitem_tab04
+*  INTO TABLE lt_data1
+*  WHERE ono = lv_value.
+*
+*  LOOP AT lt_data1 into lwa_data1.
+*    WRITE : / lwa_data1-ono ,lwa_data1-oitm , lwa_data1-orddes.
+*  ENDLOOP.
+*
+* ENDIF.
+*
+* IF lv_field = 'LWA_DATA-ODATE'.
+*   WRITE : 'This is date'.
+* ENDIF.
+*
+* IF lv_field = 'LWA_DATA-PM'.
+*    IF lv_value = 'CASH'.
+*        WRITE : 'cash payment'.
+*     ELSEIF lv_value = 'ONLINE'.
+*        WRITE : 'Online payment'.
+*        ELSEIF lv_value = 'CARD'.
+*        WRITE : 'Card payment'.
+*        ELSEIF lv_value = 'UPI'.
+*        WRITE : 'UPI payment'.
+*     ENDIF.
+* ENDIF.
+
+**************************************************************************************************************************
+*AT USER COMMAND (TO DEVELOP FUNCTION KEYS)
+
+SET PF-STATUS 'FUNCTION'. "Personal Functions. in APPLICATION TOOLBAR
+
+AT USER-COMMAND.
+
+  IF SY-UCOMM = 'ASC'.
+    SORT LT_DATA BY ONO.
+    LOOP AT LT_DATA INTO LWA_DATA.
+      WRITE: / LWA_DATA-ONO, LWA_DATA-ODATE, LWA_DATA-PM.
+    ENDLOOP.
+
+  ELSEIF SY-UCOMM = 'DSC'.
+    SORT LT_DATA BY ONO DESCENDING.
+    LOOP AT LT_DATA INTO LWA_DATA.
+      WRITE: / LWA_DATA-ONO, LWA_DATA-ODATE, LWA_DATA-PM.
+    ENDLOOP.
+
+  ELSEIF SY-UCOMM = 'EXT'.
+    LEAVE PROGRAM.
+
+  ENDIF.
+
+TOP-OF-PAGE. "for basic list title
+Write : 'Order Table'.
+
+TOP-OF-PAGE DURING LINE-SELECTION. "for secondry list title
+WRITE : 'Item Table' , sy-lisel+0(11).
+
+**********************************************************************************************************************
