@@ -1,0 +1,118 @@
+*&---------------------------------------------------------------------*
+*& Report  ZOOPS_ALV_FACTORY0404
+*&
+*&---------------------------------------------------------------------*
+*&
+*&
+*&---------------------------------------------------------------------*
+
+REPORT ZOOPS_ALV_FACTORY0404.
+*task? DOUBLE CLICK
+
+TYPES  : BEGIN OF lty_vbak,
+         vbeln type vbeln_va,
+         erdat type erdat,
+         erzet type erzet,
+         ernam type ernam,
+         vbtyp type vbtyp,
+         end of lty_vbak.
+
+  DATA : lt_vbak type TABLE OF lty_vbak.
+  DATA : lwa_vbak type lty_vbak.
+
+  TYPES : BEGIN OF lty_vbap,
+          vbeln type vbeln_va,
+          posnr type posnr_va,
+          matnr type matnr,
+          end of lty_vbap.
+
+     DATA : lt_vbap type TABLE OF lty_vbap.
+     DATA : lwa_vbap type lty_vbap.
+
+
+DATA : lv_vbeln type vbeln_va.
+DATA : lo_alv1 type REF TO cl_salv_table.
+DATA : lo_alv2 type REF TO cl_salv_table.
+DATA : lo_functions type REF TO cl_salv_functions_list.
+DATA : lo_events type REF TO cl_salv_events_table.
+
+SELECT-OPTIONS : s_vbeln for lv_vbeln DEFAULT 5000 TO 5050.
+
+CLASS CLASS1 DEFINITION.
+  PUBLIC SECTION.
+  METHODS handler for event double_click OF cl_salv_events_table IMPORTING row column.
+  ENDCLASS.
+
+CLASS CLASS1 IMPLEMENTATION. "no need of triggering methos as its double clik
+  METHOD HANDLER.
+    READ TABLE lt_vbak INTO lwa_vbak INDEX row.
+    IF sy-subrc = 0.
+      SELECT vbeln posnr matnr
+      from vbap
+      into table lt_vbap
+    WHERE vbeln = lwa_vbak-vbeln.
+
+     TRY.
+  CALL METHOD CL_SALV_TABLE=>FACTORY
+*    EXPORTING
+*      LIST_DISPLAY   = IF_SALV_C_BOOL_SAP=>FALSE
+*      R_CONTAINER    =
+*      CONTAINER_NAME =
+    IMPORTING
+      R_SALV_TABLE   = lo_alv2
+    CHANGING
+      T_TABLE        = lt_vbap
+      .
+   CATCH CX_SALV_MSG .
+  ENDTRY.
+
+  CALL METHOD LO_ALV2->DISPLAY .
+      ENDIF.
+  ENDMETHOD.
+ENDCLASS.
+
+START-OF-SELECTION. "VIMP- tell this starts after start of selectn
+
+SELECT vbeln erdat erzet ernam
+  from vbak
+  into TABLE lt_vbak
+  where vbeln IN s_vbeln.
+
+  TRY.
+  CALL METHOD CL_SALV_TABLE=>FACTORY
+*    EXPORTING
+*      LIST_DISPLAY   = IF_SALV_C_BOOL_SAP=>FALSE
+*      R_CONTAINER    =
+*      CONTAINER_NAME =
+    IMPORTING
+      R_SALV_TABLE   = lo_alv1
+    CHANGING
+      T_TABLE        = lt_vbak
+      .
+   CATCH CX_SALV_MSG .
+  ENDTRY.
+
+  CALL METHOD LO_ALV1->GET_FUNCTIONS
+    RECEIVING
+      VALUE  = lo_functions.
+
+CALL METHOD LO_FUNCTIONS->SET_ALL
+
+  EXPORTING
+    VALUE  = IF_SALV_C_BOOL_SAP=>TRUE
+    .
+CALL METHOD LO_ALV1->GET_EVENT
+  RECEIVING
+    VALUE  = lo_events
+    .
+DATA : lo_object TYPE REF TO CLASS1.
+CREATE OBJECT lo_object.
+SET HANDLER lo_object->handler for lo_events.
+
+
+
+
+
+
+  CALL METHOD LO_ALV1->DISPLAY
+      .
