@@ -1,0 +1,248 @@
+OOPSALV FACTORY
+*&---------------------------------------------------------------------*
+*& Report  ZOOPS_ALV_FACTORY04
+*&
+*&---------------------------------------------------------------------*
+*&
+*&
+*&---------------------------------------------------------------------*
+
+REPORT ZOOPS_ALV_FACTORY04.
+
+TABLES : VBAK.
+SELECT-OPTIONS : s_vbeln for vbak-vbeln DEFAULT 5000 TO 5050.
+
+TYPES  : BEGIN OF lty_vbak,
+         vbeln type vbeln_va,
+         erdat type erdat,
+         erzet type erzet,
+         ernam type ernam,
+         vbtyp type vbtyp,
+         end of lty_vbak.
+
+  DATA : lt_vbak type TABLE OF lty_vbak.
+  DATA : ls_vbak type  lty_vbak.
+
+  TYPES : BEGIN OF lty_vbap,
+          vbeln type vbeln_va,
+          posnr type posnr_va,
+          matnr type matnr,
+          end of lty_vbap.
+
+     DATA : lt_vbap type TABLE OF lty_vbap.
+     DATA : ls_vbap type  lty_vbap.
+
+ TYPES : BEGIN OF lty_final,
+         vbeln type vbeln_va,
+         erdat type erdat,
+         erzet type erzet,
+         ernam type ernam,
+         vbtyp type vbtyp,
+          posnr type posnr_va,
+          matnr type matnr,
+
+   END OF LTY_FINAL.
+
+   DATA : lt_final type TABLE OF lty_final.
+   DATA : ls_final type  lty_final.
+   DATA : lo_alv TYPE REF TO cl_salv_table.
+   DATA : lo_cont TYPE REF TO cl_gui_custom_container.
+   DATA : lo_functions type REF TO cl_salv_functions_list.
+   DATA : lo_columns type REF TO cl_salv_columns_table.
+   DATA : lo_column type REF TO cl_salv_column.
+   DATA : lo_sorts type REF TO CL_SALV_SORTS.
+   DATA : lo_filters type REF TO CL_SALV_FILTERS.
+   DATA : lo_filter type REF TO CL_SALV_FILTER.
+
+
+SELECT vbeln erdat erzet ernam
+  from vbak
+  into TABLE lt_vbak
+  where vbeln IN s_vbeln.
+
+ IF lt_vbak is not INITIAL.
+    SELECT vbeln posnr matnr
+      from vbap
+      into table lt_vbap
+      FOR ALL ENTRIES IN lt_vbak
+      where vbeln = lt_vbak-vbeln.
+ENDIF.
+
+LOOP AT lt_vbak into ls_vbak.
+  LOOP AT lt_vbap into ls_vbap WHERE vbeln = ls_vbak-vbeln.
+    ls_final-vbeln = ls_vbak-vbeln.
+    ls_final-erdat = ls_vbak-erdat.
+    ls_final-erzet = ls_vbak-erzet.
+    ls_final-ernam = ls_vbak-ernam.
+    ls_final-posnr = ls_vbap-posnr.
+    ls_final-matnr = ls_vbap-matnr.
+    APPEND ls_final to lt_final.
+    CLEAR ls_final.
+ENDLOOP.
+ENDLOOP.
+
+*FOR FULL SCREEN
+TRY.
+CALL METHOD CL_SALV_TABLE=>FACTORY
+*  EXPORTING
+*    LIST_DISPLAY   = IF_SALV_C_BOOL_SAP=>FALSE
+*    R_CONTAINER    =
+*    CONTAINER_NAME =
+  IMPORTING
+    R_SALV_TABLE   = lo_alv
+  CHANGING
+    T_TABLE        = lt_final
+    .
+ CATCH CX_SALV_MSG .
+ENDTRY.
+
+*For DEFAULT buttons(sorting.etc)
+CALL METHOD LO_ALV->GET_FUNCTIONS
+  RECEIVING
+    VALUE  = lo_functions.
+
+CALL METHOD LO_FUNCTIONS->SET_DEFAULT
+  EXPORTING
+    VALUE  = IF_SALV_C_BOOL_SAP=>TRUE.
+
+
+*To CHANGE COLUMN POSITIONS
+CALL METHOD LO_ALV->GET_COLUMNS
+  RECEIVING
+    VALUE  = lo_columns.
+
+CALL METHOD LO_COLUMNS->SET_COLUMN_POSITION
+  EXPORTING
+    COLUMNNAME = 'ERDAT'
+    POSITION   = 3.
+
+    CALL METHOD LO_COLUMNS->SET_COLUMN_POSITION
+  EXPORTING
+    COLUMNNAME = 'ERZET'
+    POSITION   = 2.
+
+*To CHANGE COLUMN LABLES
+TRY.
+CALL METHOD LO_COLUMNS->GET_COLUMN
+  EXPORTING
+    COLUMNNAME = 'VBELN'
+  RECEIVING
+    VALUE      = lo_column
+    .
+ CATCH CX_SALV_NOT_FOUND .
+ENDTRY.
+
+CALL METHOD LO_COLUMN->SET_LONG_TEXT
+  EXPORTING
+    VALUE  = 'Document Number'.
+
+*To use SORT FUNCTIONALITY
+CALL METHOD LO_ALV->GET_SORTS
+  RECEIVING
+    VALUE  = lo_sorts
+    .
+ TRY.
+ CALL METHOD LO_SORTS->ADD_SORT
+   EXPORTING
+     COLUMNNAME = 'VBELN'
+*     POSITION   =
+     SEQUENCE   = IF_SALV_C_SORT=>SORT_DOWN "DOWN = DESCENDING,UP=ASCEND
+*     SUBTOTAL   = IF_SALV_C_BOOL_SAP=>FALSE
+*     GROUP      = IF_SALV_C_SORT=>GROUP_NONE
+*     OBLIGATORY = IF_SALV_C_BOOL_SAP=>FALSE
+*   RECEIVING
+*     VALUE      =
+     .
+  CATCH CX_SALV_NOT_FOUND .
+  CATCH CX_SALV_EXISTING .
+  CATCH CX_SALV_DATA_ERROR .
+ ENDTRY.
+
+
+*FILTERING
+CALL METHOD LO_ALV->GET_FILTERS
+  RECEIVING
+    VALUE  = lo_filters.
+
+TRY.
+CALL METHOD LO_FILTERS->ADD_FILTER
+  EXPORTING
+    COLUMNNAME = 'POSNR'
+    SIGN       = 'I'
+    OPTION     = 'EQ' " check BT, 10 TO 20
+    LOW        =  '10' "show item no 20 only
+*    HIGH       =
+  RECEIVING
+    VALUE      = lo_filter " for random values 20 and 40 (not 30)
+
+    .
+ CATCH CX_SALV_NOT_FOUND .
+ CATCH CX_SALV_DATA_ERROR .
+ CATCH CX_SALV_EXISTING .
+ENDTRY.
+
+" for random values 20 and 40 (not 30)
+TRY.
+CALL METHOD LO_FILTER->ADD_SELOPT
+  EXPORTING
+    SIGN   = 'I'
+    OPTION = 'EQ'
+    LOW    = '30'
+*    HIGH   =
+
+    .
+ CATCH CX_SALV_DATA_ERROR .
+ENDTRY.
+
+
+    .
+
+
+   .
+
+
+
+
+    .
+
+
+CALL METHOD LO_ALV->DISPLAY.
+
+
+
+********************************************************************************************
+*FOR CONTAINER
+*CREATE OBJECT lo_cont
+*EXPORTING
+*CONTAINER_NAME = 'CONT'.
+
+
+*TRY." to see coment from 76
+*CALL METHOD CL_SALV_TABLE=>FACTORY
+*  EXPORTING
+**    LIST_DISPLAY   = IF_SALV_C_BOOL_SAP=>FALSE
+*    R_CONTAINER    = lo_cont
+**    CONTAINER_NAME =
+*  IMPORTING
+*    R_SALV_TABLE   = lo_alv
+*  CHANGING
+*    T_TABLE        = lt_final
+*    .
+* CATCH CX_SALV_MSG .
+*ENDTRY.
+
+
+    .
+
+    .
+
+
+*CALL METHOD LO_ALV->DISPLAY.
+*
+*CALL SCREEN '0100'.
+
+
+
+INCLUDE zoops_alv_factory04_status_o01.
+
+INCLUDE zoops_alv_factory04_user_coi01.
