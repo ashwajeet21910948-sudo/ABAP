@@ -1,0 +1,236 @@
+*&---------------------------------------------------------------------*
+*& Report  ZREPORTS04
+*&
+*&---------------------------------------------------------------------*
+*&
+*&
+*&---------------------------------------------------------------------*
+
+REPORT ZREPORTS04 MESSAGE-ID ZMESSAGE04.
+*For Single input
+
+*TYPES : BEGIN OF lty_data,   "from zclgmaster table
+*        CLG_EG_NO TYPE ZDE_CLG_REG_NO,
+*        LOCATION  TYPE ZDE_LOC,
+*        PIN TYPE ZDE_PIN,
+*  END OF lty_data.
+*
+*  DATA : lt_data TYPE TABLE OF lty_data,
+*         lwa_data TYPE lty_data,
+*         lv_flag type c.
+*
+* PARAMETERS : p_clg_eg TYPE ZDE_CLG_REG_NO,
+*              LOCATION TYPE ZDE_LOC.
+*
+**writing query to fetch data from table (by open SQL0
+* SELECT  CLG_EG_NO LOCATION PIN
+* FROM ZCLG_MASTER
+* INTO TABLE  lt_data
+* WHERE CLG_EG_NO = p_clg_eg
+* AND LOCATION = LOCATION.
+
+**MESSAGES (SE91) E=error I=information
+*IF sy-subrc <> 0. "< is NOT EQUAL TO> Checking for wronf input.
+*MESSAGE I002 WITH p_clg_eg LOCATION."E="if wrong input is given code will end here itself.VIMP=MESSAGE ID GIVEN ABOVE IN TITLE
+*lv_flag = 'X'. "For I ctrl will continue with rest of the program,but dont run rest profram exit the code by flag.
+*endif. "also check 000 msg code.see se981. 002= 2 & are used (max 4 can be used)
+*
+*IF lv_flag = ' '.
+* LOOP AT lt_data INTO lwa_data.
+* WRITE : / lwa_data-CLG_EG_NO ,  lwa_data-LOCATION ,  lwa_data-PIN.
+* endloop.
+* ENDIF.
+
+
+
+
+*For range of Ipnuts.
+
+*     TYPES : BEGIN OF lty_data,   "from zclgmaster table
+*        CLG_EG_NO TYPE ZDE_CLG_REG_NO,
+*        LOCATION  TYPE ZDE_LOC,
+*        PIN TYPE ZDE_PIN,
+*  END OF lty_data.
+*
+*  DATA : lt_data TYPE TABLE OF lty_data,
+*         lwa_data TYPE lty_data,
+*         CLG_EG_NO TYPE ZDE_CLG_REG_NO.
+*
+*   SELECT-OPTIONS : s_clg FOR CLG_EG_NO.
+*
+**writing query to fetch data from table (by open SQL0
+* SELECT  CLG_EG_NO LOCATION PIN
+* FROM ZCLG_MASTER
+* INTO TABLE  lt_data
+* WHERE CLG_EG_NO IN s_clg.
+*
+* LOOP AT lt_data INTO lwa_data.
+* WRITE : / lwa_data-CLG_EG_NO ,  lwa_data-LOCATION ,  lwa_data-PIN.
+*     endloop.
+
+
+*Multiple table joining
+
+*DATA : lv_ono type ZDONO.
+*DATA : lv_flag type boolean. "true or false.
+*DATA : lv_index type i."for sysubrc tabix
+*
+*TYPES : BEGIN OF lty_data, "1st table
+*        ONO TYPE ZDONO,
+*        ODATE TYPE ZDODATE,
+*        PM TYPE ZDPM,
+*        END OF lty_data.
+*
+*DATA : LT_DATA TYPE TABLE OF lty_data,
+*       lwa_data TYPE lty_data.
+*
+*TYPES : begin of lty_data1, "2nd table
+*        ONO TYPE ZDONO,
+*        OITM TYPE ZO_ITEM,
+*        ORDDES TYPE ZORDDES,
+*        END OF lty_data1.
+*
+*DATA : lt_data1 TYPE TABLE OF lty_data1,
+*       lwa_data1 TYPE lty_data1.
+*
+*
+*TYPES : BEGIN OF lty_final,
+*        ONO TYPE ZDONO,
+*        ODATE TYPE ZDODATE,
+*        PM TYPE ZDPM,
+*        OITM TYPE ZO_ITEM,
+*        ORDDES TYPE ZORDDES,
+*  END OF lty_final.
+*
+*  DATA : lt_final TYPE TABLE OF lty_final,
+*       lwa_final TYPE lty_final.
+*
+*
+*
+*SELECT-OPTIONS : s_ono FOR lv_ono.
+*
+*SELECT ono odate pm
+*  from ZORDER_04
+*  INTO TABLE lt_data
+*  WHERE ono IN s_ono.
+*
+*  IF lt_data IS NOT INITIAL.  "not initial= is not empty
+*      SELECT ono OITM ORDDES
+*      FROM ZITEM_TAB04
+*      INTO TABLE lt_data1
+*      For ALL ENTRIES IN lt_data
+*      WHERE ono = lt_data-ono.
+*    endif.
+*
+*SORT lt_data BY ono."used to give BINARY SEARCH
+*
+* LOOP AT lt_data INTO lwa_data. "WE cannot go for read table.
+*     READ TABLE lt_data1 INTO lwa_data1 WITH KEY ono = lwa_data-ono BINARY SEARCH.
+*    IF sy-subrc = 0.
+*     lv_index = sy-tabix."tabix is for inner loop.(Parallel cursor concept) yt lec-37 pt 2 programming
+*     LOOP AT lt_data1 INTO lwa_data1 FROM lv_index. "WHERE ono = lwa_data-ono.
+*       IF lwa_data-ono <> lwa_data-ono. "EXIT if not matching to save time.
+*     EXIT.
+*       ELSE.
+*   lwa_final-ono = lwa_data-ono.
+*   lwa_final-ODATE = lwa_data-ODATE.
+*   lwa_final-PM = lwa_data-PM.
+*   lwa_final-OITM = lwa_data1-OITM.
+*   lwa_final-ORDDES = lwa_data1-ORDDES.
+*   APPEND lwa_final TO lt_final.
+*   CLEAR lwa_final.
+*       ENDIF.
+*   lv_flag = 'X'.  "to give--either one of the loop to execute.not both at a time
+*      ENDLOOP.
+*     IF lv_flag = ' '.
+*     lwa_final-ono = lwa_data-ono. "For fixing the bug, i.e of order table has extra orders which r not in item table.
+*     lwa_final-ODATE = lwa_data-ODATE.
+*     lwa_final-PM = lwa_data-PM.    " YT LEC=14 part 2 programing.
+*   APPEND lwa_final to lt_final.
+*   CLEAR : lwa_final.
+*   CLEAR  lv_flag. "if not clear flag will always remain X.
+*     ENDIF.
+*    ENDIF.
+*  ENDLOOP.
+*
+*   LOOP AT lt_final INTO lwa_final.
+*     WRITE : / lwa_final-ono , lwa_final-ODATE , lwa_final-PM,
+*     lwa_final-OITM , lwa_final-ORDDES.
+*     ENDLOOP.
+
+
+
+
+*JOINS (BOTH TABLES IN SINGLE QUIRY)
+TYPES : BEGIN OF lty_final,
+        ONO TYPE ZDONO,
+        ODATE TYPE ZDODATE,
+        PM TYPE ZDPM,
+        OITM TYPE ZO_ITEM,
+        ORDDES TYPE ZORDDES,
+        END OF lty_final.
+
+DATA : lt_final TYPE TABLE OF lty_final.
+DATA : lwa_final TYPE lty_final.
+
+DATA : lv_ono TYPE ZDONO.
+
+SELECT-OPTIONS : s_ono FOR lv_ono.
+
+SELECT a~ono"name of 2 tables.short cut a,b.
+       a~odate
+       a~pm
+       b~oitm
+       b~orddes
+  INTO TABLE lt_final
+  FROM zorder_04 AS a
+  INNER JOIN zitem_tab04 AS b
+  ON a~ono = b~ono
+  WHERE a~ono IN s_ono."tell to fetch from tble a.
+
+
+*INNER JOIN
+SELECT a~ONO a~ODATE a~PM b~OITM b~ORDDES " ~ is used not -
+FROM ZORDER_04 AS a JOIN zitem_tab04 AS b "Takes all record of left table & matches with right table
+ON a~ono = b~ono
+INTO TABLE lt_final
+WHERE a~ono IN s_ono.
+
+*LEFT OUTER JOIN  (comment inner join to execute this)
+SELECT a~ONO a~ODATE a~PM b~OITM b~ORDDES " ~ is used not -
+FROM ZORDER_04 AS a LEFT OUTER JOIN zitem_tab04 AS b "Takes all record of left table & matches with right table
+ON a~ono = b~ono
+INTO TABLE lt_final
+WHERE a~ono IN s_ono.
+
+WRITE : sy-uline(74) .
+WRITE :/ sy-vline , TEXT-001 ,
+        16 sy-vline , TEXT-002 ,
+        30 sy-vline , TEXT-003 ,
+        46 sy-vline , TEXT-004,
+        60 sy-vline , TEXT-005, "use text symbolls for translation(GO TO>>Translation)
+        74 sy-vline.
+WRITE :/ sy-uline(74).
+
+LOOP AT lt_final INTO lwa_final.
+
+  IF lwa_final-oitm IS INITIAL AND lwa_final-orddes IS INITIAL.
+    " No matching record found in right table
+    WRITE: / 'Order without Item --->',
+             lwa_final-ono COLOR COL_NEGATIVE,
+             lwa_final-odate COLOR COL_NEGATIVE,
+             lwa_final-pm COLOR COL_NEGATIVE.
+    WRITE: / sy-uline(74).
+
+  ELSE.
+    " Matching record exists
+    WRITE :/ sy-vline ,lwa_final-ono     UNDER TEXT-001 COLOR COL_POSITIVE,
+              16 sy-vline, lwa_final-odate UNDER TEXT-002,
+              30 sy-vline, lwa_final-pm    UNDER TEXT-003 ,
+              46 sy-vline, lwa_final-oitm  UNDER TEXT-004,
+              60 sy-vline, lwa_final-orddes UNDER TEXT-005,
+              74 sy-vline.
+    WRITE :/ sy-uline(74).
+  ENDIF.
+
+ENDLOOP.
