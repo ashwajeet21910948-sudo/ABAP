@@ -1,0 +1,109 @@
+
+
+REPORT ZSTRING_OPERATIONS.
+
+*CONCATIVATE AND SPLIT
+
+*DATA : lv_input1(10) TYPE C VALUE 'Welcome', "FOR CONCATIVATE
+*       lv_input2(10) TYPE C VALUE 'To',
+*       lv_input3(10) TYPE c VALUE 'SAP ABAP',
+*       lv_output TYPE string.
+*
+*DATA : lv_result1(10) TYPE c, "FOR SPLIT
+*       lv_result2(10) TYPE c,
+*       lv_result3(10) TYPE c.
+*
+*CONCATENATE lv_input1 lv_input2 lv_input3 INTO lv_output SEPARATED BY '/'. "SEPERATOR IS COMPUSLORY FOR SPLIT!
+*
+*SPLIT lv_output AT '/' INTO  lv_result1 lv_result2 lv_result3.
+*
+*WRITE : 'The output is' , lv_output.
+*
+*WRITE : /'result after split is' ,/ lv_output.
+
+
+
+*CONDENSE
+
+*DATA lv_input TYPE string VALUE '  Welcome to   SAP ABAP  '.
+*WRITE : 'Before Condense' , lv_input.
+*
+*DATA lv_length(2) TYPE N.
+*lv_length = STRLEN( lv_input ).
+*WRITE : / 'the length before ccondense' , lv_length.
+*
+*CONDENSE lv_input.
+*WRITE : / 'After Condense' , lv_input.
+*
+*lv_length = STRLEN( lv_input ).
+*WRITE : / 'the length after ccondense' , lv_length.
+*
+*CONDENSE lv_input NO-GAPS.
+*WRITE : / 'After Condense No Gap' ,  lv_input.
+*
+*lv_length = STRLEN( lv_input ).
+*WRITE : / 'the length after ccondense No gap' , lv_length.
+
+
+*FIND STRING
+
+*DATA lv_input(20) TYPE c VALUE 'Welcome to SAP ABAP'.
+*
+*FIND 'welcome' IN lv_input IGNORING CASE. "Use IGNORING CASE to ignore case sensitive,if removed it will become sensitive
+*
+*IF sy-subrc = 0.
+*  WRITE : / 'Successful', sy-subrc.
+*  else .
+*  WRITE : / 'Unsessful' , sy-subrc.
+*
+*ENDIF.
+
+
+*TRANSLATE
+
+*DATA : lv_input(40) TYPE c VALUE 'Welcome to SAP ABAP',
+*      lv_input1(40) TYPE c VALUE 'WELCOME TO SAP ABAP',
+*      lv_rule(40) TYPE c VALUE 'eEmM'. "rule always works in pair,its customized rule
+*
+*
+*TRANSLATE lv_input1 TO LOWER CASE. " similarly for upper case
+*TRANSLATE lv_input USING lv_rule.
+*
+*WRITE : / 'lower case', lv_input1,
+*        / 'using rule' , lv_input.
+
+
+*SHIFT
+
+*DATA : lv_input(10) TYPE c VALUE '0123456789',
+*      lv_input2(10) TYPE c VALUE '0123456789',
+*      lv_input3(10) TYPE c VALUE '0123456789',
+*      lv_result(10) TYPE c VALUE '7000000000',
+*      lv_result2(10) TYPE c VALUE '000000007'.
+*
+*SHIFT :  lv_input BY 5 PLACES,
+*         lv_input2 BY 4 PLACES RIGHT,
+*         lv_input3 BY 4 PLACES CIRCULAR,
+*         lv_result RIGHT DELETING TRAILING '0',
+*         lv_result2 LEFT DELETING LEADING '0'.
+*
+*WRITE : /'Left shift' ,lv_input,
+*        /'Right Shift' ,lv_input2,
+*        /'Circular Shift' ,lv_input3,
+*        /'Trailing' , lv_result,
+*        /'Leading' , lv_result2.
+
+*SUBSTRING OPERATIONS
+
+DATA : value(40) TYPE c VALUE '91-040-705654222',
+      country(2) TYPE c,
+      city(3) TYPE c,
+      number(10) TYPE c.
+
+country = value+0(2). "positions statrt counting from 0 not 1.
+city = value+3(3).
+number = value+7(10).
+
+WRITE : / 'The country code is' , country,
+        / 'The city code is' , city,
+        / 'The number is' , number.
