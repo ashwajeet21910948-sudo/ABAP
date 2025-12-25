@@ -1,0 +1,53 @@
+*&---------------------------------------------------------------------*
+*& Report  ZOOPS042
+*&
+*&---------------------------------------------------------------------*
+*&
+*&
+*&---------------------------------------------------------------------*
+
+REPORT ZOOPS042.
+
+*for PARAMETERS
+
+*PARAMETERS : p_vbeln type vbeln_va DEFAULT 4971.
+*
+*DATA : lo_object TYPE REF TO zusual042.
+*DATA : lt_final type ZSTR_SALES_DETAILS_OOPS_TT.
+*DATA : lwa_final type ZSTR_SALES_DETAILS_OOPS.
+*
+*CREATE OBJECT lo_object.
+*
+*CALL METHOD LO_OBJECT->GET_DATA
+*  EXPORTING
+*    PVBELN    = p_vbeln
+*  IMPORTING
+*    LT_OUTPUT = lt_final.
+*
+*
+*
+*LOOP AT lt_final INTO lwa_final.
+* WRITE : / lwa_final-vbeln , lwa_final-erdat , lwa_final-erzet , lwa_final-ernam , lwa_final-posnr , lwa_final-matnr.
+*endloop.
+    .
+
+********************************************************************************************************************************
+*FOR SELECT OPTIONS
+
+DATA : lv_vbeln TYPE vbeln_va.
+DATA : lo_object TYPE REF TO ZUSUAL042.
+DATA : lt_final type ZSTR_SALES_DETAILS_OOPS_TT.
+DATA : lwa_final type ZSTR_SALES_DETAILS_OOPS.
+
+SELECT-OPTIONS : s_vbeln FOR lv_vbeln.
+
+CREATE OBJECT lo_object.
+CALL METHOD LO_OBJECT->GET_MULTIPLE_DATA
+  EXPORTING
+    SVBELN    = s_vbeln[] " with headerline issue
+  IMPORTING
+    LT_OUTPUT = lt_final.
+
+LOOP AT lt_final INTO lwa_final.
+ WRITE : / lwa_final-vbeln , lwa_final-erdat , lwa_final-erzet , lwa_final-ernam , lwa_final-posnr , lwa_final-matnr.
+endloop.
