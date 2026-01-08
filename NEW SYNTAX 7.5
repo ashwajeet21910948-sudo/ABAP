@@ -1,0 +1,111 @@
+*&---------------------------------------------------------------------*
+*& Report zlivecoding
+*&---------------------------------------------------------------------*
+*&
+*&---------------------------------------------------------------------*
+REPORT zlivecoding.
+
+*SELECT MATNR,MTART,MEINS
+*FROM MARA
+*INTO TABLE @DATA(lt_data)
+*UP TO 10 ROWS.
+*
+*LOOP AT lt_data INTO DATA(lwa_data).
+*WRITE : / lwa_data-matnr ,lwa_data-meins, lwa_data-mtart.
+*ENDLOOP.
+************************************************ concanate
+*DATA(lv_a) = 'Hello'.
+*DATA(lv_b) = 'Ramesh'.
+*DATA(lv_text) = |{ lv_a } { lv_b }|.
+*
+*WRITE : / lv_text.
+
+********************************************************
+
+
+*TYPES: BEGIN OF STR1,
+*
+*       EMP_ID   TYPE NUM2,
+*       EMP_NAME TYPE CHAR10,
+*       EMP_DESI TYPE CHAR15,
+*
+*       END OF STR1.
+*
+*TYPES: TT_STR1 TYPE TABLE OF STR1 WITH DEFAULT KEY. "table type
+*
+*       DATA: IT_DATA TYPE TABLE OF STR1.                    ""  USING #
+*
+*IT_DATA = VALUE #( ( EMP_ID = '1' EMP_NAME = 'RAHUL' EMP_DESI = 'SAP ABAP') )."adding data
+*
+*
+*LOOP AT IT_dATA INTO DATA(WA_DATA).
+*
+*WRITE: / WA_DATA-emp_id, WA_DATA-emp_name, WA_DATA-emp_desi.
+*
+*ENDLOOP.
+
+*******************************************************
+*SELECT MATNR,MTART,MEINS
+*FROM MARA
+*INTO TABLE @DATA(IT_dATA)
+*UP TO 10 ROWS.
+
+*LOOP AT IT_DATA ASSIGNING FIELD-SYMBOL(<FS_ORD>).                                " LOOP WITH FIELD SYMBOL
+*
+*WRITE: / <FS_ORD>-matnr, <FS_ORD>-mtart, <FS_ORD>-meins.
+*
+*ENDLOOP.
+
+*LOOP AT IT_dATA REFERENCE INTO DATA(LO_ORD).      " LOOP WITH OBJECT
+*
+*WRITE: / LO_ORD->matnr, LO_ORD->mtart, LO_ORD->meins.
+*
+*ENDLOOP.
+**********************************************************
+
+*select vbeln as order_number,
+*       erzet as order_date,
+*       ernam as created_by,
+*
+*
+*  case ernam WHEN 'S22AK8' THEN 'APPLE'
+*               WHEN 'S22A19' THEN 'MANGO'
+*               WHEN 'S22A9' THEN 'ORANGE'
+*               ELSE 'NO FRUIT'
+*               END AS FRUIT
+*
+*FROM VBAK
+*INTO TABLE @data(it_data)
+*UP TO 25 ROWS.
+*
+*
+*LOOP AT it_Data INTO data(wa_data).
+*
+*WRITE: / wa_data-order_number,
+*         wa_data-order_date,
+*         wa_Data-created_by,
+*         wa_Data-FRUIT.
+*
+*ENDLOOP.
+
+
+*********************   SQL FUCNTIONS FOR PUSHING LOGIC TO HANA
+
+
+
+SELECT  BUYER_GUID     AS BUYER_GUID,
+   SUM( GROSS_AMOUNT ) AS GROSS_AMOUNT,
+
+  CASE WHEN SUM( GROSS_AMOUNT ) > 100000 THEN 'HIGH'
+       WHEN SUM( gross_amount ) BETWEEN 50000 AND 99999 THEN 'MEDIUM'
+        ELSE 'LOW' END AS AMOUNT_LEVEL
+       FROM SNWD_SO GROUP BY BUYER_GUID
+       INTO TABLE @DATA(IT_dATA).
+
+LOOP AT IT_DATA INTO DATA(WA_DATA).
+
+ WRITE: / WA_DATA-buyer_guid,
+          WA_DATA-gross_amount,
+          WA_dATA-amount_level.
+
+ENDLOOP.
