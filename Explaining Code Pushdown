@@ -1,0 +1,34 @@
+*WITHOUT CODE PUSH-DOWN
+
+" Step 1: Fetch all data to application server
+SELECT * FROM sflight INTO TABLE lt_flights.
+
+" Step 2: Process in ABAP (application layer)
+LOOP AT lt_flights INTO ls_flight.
+  IF ls_flight-seatsocc > 0.
+    ls_flight-occupancy_rate = 
+      ( ls_flight-seatsocc / ls_flight-seatsmax ) * 100.
+    MODIFY lt_flights FROM ls_flight.
+  ENDIF.
+ENDLOOP.
+
+*****************************************************************
+*WITH CODE-PUSHDOWN
+
+" All processing done in database
+SELECT carrid,
+       connid,
+       fldate,
+       seatsocc,
+       seatsmax,
+       CAST( seatsocc AS DECIMAL ) / 
+       CAST( seatsmax AS DECIMAL ) * 100 AS occupancy_rate
+  FROM sflight
+  WHERE seatsocc > 0
+  INTO TABLE @DATA(lt_flights).
+*******************************************************************
+"Benefits:
+*1.Only filtered results transferred over network
+*2.Processing done in HANA (much faster)
+*3.Lower memory usage on application server
+*4.Better scalability
