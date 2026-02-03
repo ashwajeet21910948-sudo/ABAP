@@ -1,0 +1,14 @@
+@AbapCatalog.sqlViewName: 'ZFLIGHTVIEW'
+@EndUserText.label: 'Flight Information'
+define view Z_I_Flight 
+  as select from sflight
+{
+  key carrid as AirlineCode,
+  key connid as ConnectionNumber,
+  key fldate as FlightDate,
+      price as Price,
+      currency as Currency,
+      seatsmax as MaximumSeats,
+      seatsocc as OccupiedSeats,
+      seatsmax - seatsocc as AvailableSeats
+}
