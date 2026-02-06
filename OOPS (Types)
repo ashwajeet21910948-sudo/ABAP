@@ -6,6 +6,8 @@
 *&
 *&---------------------------------------------------------------------*
 
+*Sales Order report demonstrating OOP concepts in ABAP
+
 REPORT ZOOPS_TYPES042. (OOPS TYPES)
 DATA :  LV_VBELN TYPE VBELN_VA.
 
@@ -45,7 +47,7 @@ CLASS CLASS1 DEFINITION.
             ERNAM TYPE ERNAM,
             ERZET TYPE ERZET,
             POSNR TYPE POSNR_VA,
-            MANTR TYPE MATNR,
+            MATNR TYPE MATNR,
       END OF LTY_OUTPUT .
     TYPES:
       LTTY_OUTPUT TYPE TABLE OF LTY_OUTPUT .
