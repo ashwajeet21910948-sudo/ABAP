@@ -1,0 +1,50 @@
+DATA : lv_data (2) type N.
+FIELD-SYMBOLS : <fs_data> type N.
+
+Lv_data = 10.
+
+ASSIGN lv_data TO <fs_data>.
+IF <fs_data> IS ASSIGN.
+ <fs_data> = 20.
+WRITE : lv_data
+ENDIF.
+
+*COMMENT ABOVE
+*substring
+DATA : lv_value(50) type c value ‘Welcome to Home’.
+FIELD-SYMBOLS : <fs_value>  TYPE C.
+
+ASSIGN lv_value+8(2) to  <fs_value>.
+IF  <fs_value> is assigned.
+ <fs_value> = ‘at’.
+WRITE : lv_value.
+ENDIF.
+
+*field symbol in place of work area.declare field-symbols : <fs_data> above
+
+READ TABLE lt_data ASSIGNING <fs_data> WITH KEY ono = 1.
+IF <fs_data> IS ASSIGNED
+WRITE :  <fs_data>-ono , <fs_data>-pm.
+ENDIF.
+
+*MODIFY
+LOOP AT lt_data ASSIGINING <fs_data>.
+IF <fs_data> IS ASSIGNED.
+<fs_data>-pm ‘CASH’.
+ENDIF.
+ENDLOOP.
+
+*APPEND
+APPEND INITIAL LINE TO lt_data ASSIGNING  <fs_data>.
+IF <fs_data> IS ASSIGNED.
+<fs_data>-ONO = 1.
+<fs_data>-PM = ‘CASH’.
+UNASSIGN <fs_data>. “CLEARING ASSIGN
+ENDIF.
+
+LOOP AT lt_data ASSIGINING <fs_data>.
+IF <fs_data> IS ASSIGNED.
+WRITE :  <fs_data>-ono , <fs_data>-pm.
+ENDIF.
+ENDLOOP.
+
