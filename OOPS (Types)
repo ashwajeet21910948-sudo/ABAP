@@ -18,7 +18,7 @@ DATA :  LV_VBELN TYPE VBELN_VA.
             ERNAM TYPE ERNAM,
             ERZET TYPE ERZET,
             POSNR TYPE POSNR_VA,
-            MANTR TYPE MATNR,
+            MATNR TYPE MATNR,
       END OF LTY_output .
 
  DATA : lt_output type table of lty_output.
@@ -105,7 +105,7 @@ CLASS CLASS1 DEFINITION.
         lwa_output-ERZET = LS_VBAK-ERZET.
         lwa_output-ERNAM = LS_VBAK-ERNAM.
         lwa_output-POSNR = LS_VBAP-POSNR.
-        lwa_output-MANTR = LS_VBAP-MATNR.
+        lwa_output-MATNR = LS_VBAP-MATNR.
         APPEND lwa_output TO TOUTPUT.
         CLEAR lwa_output.
       ENDLOOP.
