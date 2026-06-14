@@ -1,0 +1,123 @@
+@AbapCatalog.viewEnhancementCategory: [#NONE]
+@AccessControl.authorizationCheck: #CHECK
+@EndUserText.label: 'Sales Order Analytics - Header & Item View'
+@Metadata.ignorePropagatedAnnotations: true
+
+@Analytics.dataCategory: #CUBE
+@Analytics.dataExtraction.enabled: true
+
+@VDM.viewType: #CONSUMPTION
+@ObjectModel.usageType: {
+  serviceQuality: #A,
+  sizeCategory: #M,
+  dataClass: #TRANSACTIONAL
+}
+
+-- ============================================================
+-- CDS Consumption View: Sales Order Analytics
+-- Author  : Your Name
+-- Purpose : Exposes Sales Order Header + Item data for
+--           analytical reporting (e.g., Fiori, BW/4HANA)
+-- ============================================================
+
+define view entity ZC_SALES_ORDER_ANALYTICS
+  as select from ZI_SALES_ORDER_ITEM as Item -- Composite Interface View
+
+  association [0..1] to I_Customer          as _Customer   on $projection.SoldToParty = _Customer.Customer
+  association [0..1] to I_Material          as _Material   on $projection.Material    = _Material.Material
+  association [0..1] to I_CompanyCode       as _Company    on $projection.CompanyCode = _Company.CompanyCode
+  association [0..1] to I_SalesOrganization as _SalesOrg   on $projection.SalesOrganization = _SalesOrg.SalesOrganization
+
+{
+  -- ── Keys ──────────────────────────────────────────────────
+  @ObjectModel.foreignKey.association: '_SalesOrder'
+  key Item.SalesOrder,
+
+  @ObjectModel.foreignKey.association: '_SalesOrderItem'
+  key Item.SalesOrderItem,
+
+  -- ── Header Fields ─────────────────────────────────────────
+  @ObjectModel.foreignKey.association: '_Customer'
+  @EndUserText.label: 'Sold-To Party'
+  Item.SoldToParty,
+
+  @ObjectModel.foreignKey.association: '_SalesOrg'
+  Item.SalesOrganization,
+
+  Item.CompanyCode,
+
+  @Semantics.calendar.yearMonth: true
+  @EndUserText.label: 'Order Year-Month'
+  left( Item.CreationDate, 6 ) as OrderYearMonth,
+
+  @Semantics.calendar.year: true
+  substring( Item.CreationDate, 1, 4 ) as OrderYear,
+
+  Item.CreationDate,
+  Item.SalesDocumentType,
+  Item.OverallSDProcessStatus,
+
+  -- ── Item Fields ───────────────────────────────────────────
+  @ObjectModel.foreignKey.association: '_Material'
+  Item.Material,
+
+  Item.MaterialGroup,
+  Item.Division,
+  Item.Plant,
+
+  @Semantics.quantity.unitOfMeasure: 'OrderQuantityUnit'
+  Item.OrderQuantity,
+
+  Item.OrderQuantityUnit,
+
+  @Semantics.amount.currencyCode: 'TransactionCurrency'
+  @DefaultAggregation: #SUM
+  @EndUserText.label: 'Net Order Value'
+  Item.NetAmount,
+
+  @Semantics.amount.currencyCode: 'TransactionCurrency'
+  @DefaultAggregation: #SUM
+  @EndUserText.label: 'Tax Amount'
+  Item.TaxAmount,
+
+  @Semantics.amount.currencyCode: 'TransactionCurrency'
+  @DefaultAggregation: #SUM
+  @EndUserText.label: 'Gross Order Value'
+  Item.GrossAmount,
+
+  Item.TransactionCurrency,
+
+  @Semantics.amount.currencyCode: 'DisplayCurrency'
+  @DefaultAggregation: #SUM
+  @EndUserText.label: 'Net Value (Display Currency)'
+  Item.NetAmountInDisplayCurrency,
+
+  Item.DisplayCurrency,
+
+  -- ── Delivery & Billing Status ─────────────────────────────
+  Item.DeliveryStatus,
+  Item.InvoiceStatus,
+  Item.RejectionReason,
+
+  -- ── Measures (KPIs) ──────────────────────────────────────
+  @DefaultAggregation: #COUNT_DISTINCT
+  @EndUserText.label: '# of Orders'
+  Item.SalesOrder as NumberOfOrders,
+
+  @DefaultAggregation: #SUM
+  @Semantics.amount.currencyCode: 'DisplayCurrency'
+  @EndUserText.label: 'Open Order Value'
+  case Item.OverallSDProcessStatus
+    when 'A' then Item.NetAmountInDisplayCurrency  -- Not Started
+    when 'B' then Item.NetAmountInDisplayCurrency  -- Partially Processed
+    else cast( 0 as abap.curr( 23, 2 ) )
+  end as OpenOrderValue,
+
+  -- ── Associations (exposed for drill-down) ─────────────────
+  _Customer,
+  _Material,
+  _Company,
+  _SalesOrg
+}
+where
+  Item.RejectionReason is initial  -- Exclude rejected items
